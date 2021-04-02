@@ -22,6 +22,9 @@ export interface IUser {
   role: UserRole;
 }
 
+export interface IScope {
+  scope: string;
+}
 export interface AuthorizationRequest {
   response_type: ResponseType;
   client_id: string;
@@ -42,3 +45,4 @@ export enum UserRole {
 export interface DocumentClient extends IClient, Document {}
 export interface DocumentUser extends IUser, Document {}
 export interface DocumentClient extends IClient, Document {}
+export interface DocumentScope extends IScope, Document {}

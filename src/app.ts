@@ -9,6 +9,7 @@ import createUser from './setup/createusers';
 import { UserRole } from './types';
 import createclient from './setup/createclient';
 import path from 'path';
+import createscope from './setup/createscope';
 
 dotenv.config();
 const app = express();
@@ -62,6 +63,9 @@ void createclient({
   clientSecret: process.env.CLIENT_SECRET,
   redirectUris: [process.env.CLIENT_REDIRECT_URL]
 });
+
+void createscope();
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
