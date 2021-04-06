@@ -9,8 +9,6 @@ export default async (userConfig: IUser) => {
     return 'Admin not created: at least one admin user already found in database.';
   }
 
-  // FIXME: Fails when a non-admin user with same email already exists in the database
-
   const user = new User({ ...userConfig, password: await bcrypt.hash(userConfig.password, 10) });
   user.role = UserRole.admin;
   await user.save();

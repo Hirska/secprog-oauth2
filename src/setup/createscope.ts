@@ -2,7 +2,7 @@ import Scope from '../models/scope';
 import { DocumentScope } from '../types';
 
 export default async (scopeConfig = 'profile') => {
-  const scope: DocumentScope | null = await Scope.findOne({ role: scopeConfig });
+  const scope: DocumentScope | null = await Scope.findOne({ scope: scopeConfig });
 
   if (scope) {
     return 'Scope not created: at least one scope already found in database.';

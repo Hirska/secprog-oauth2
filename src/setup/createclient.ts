@@ -9,12 +9,12 @@ export default async (clientConfig: Omit<IClient, 'user'>) => {
     return 'Client not created as atleast one is in database';
   }
   if (!user) {
-    process.exit(1);
+    return 'User not created';
   }
 
   // FIXME: Fails when a non-admin user with same email already exists in the database
 
   const newClient = new Client({ ...clientConfig, user: user.id as string });
   await newClient.save();
-  return 'Admin user successfully created';
+  return 'Client user successfully created';
 };
