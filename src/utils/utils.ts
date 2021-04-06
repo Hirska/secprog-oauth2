@@ -1,3 +1,4 @@
+import InvalidRequestError from '../errors/InvalidRequestError';
 import { IUser, AuthorizationRequest, ResponseType, UserRole } from '../types';
 type UserFields = { username: unknown; password: unknown };
 export const toUser = ({ username, password }: UserFields): IUser => {
@@ -31,7 +32,7 @@ export const toAuthorizationRequest = (authorizationRequest: any): Authorization
 
 const parseToString = (param: unknown, paramName: string): string => {
   if (!param || !isString(param)) {
-    throw new Error(`Incorrect or missing ${paramName}:` + param);
+    throw new InvalidRequestError(`Incorrect or missing ${paramName}:` + param);
   }
   return param;
 };
@@ -42,7 +43,7 @@ const isString = (text: unknown): text is string => {
 
 const parseResponseType = (responseType: unknown): ResponseType => {
   if (!responseType || !isResponseType(responseType)) {
-    throw new Error('Incorrect or missing response_type: ' + responseType);
+    throw new InvalidRequestError('Incorrect or missing response_type: ' + responseType);
   }
   return responseType;
 };
