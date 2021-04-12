@@ -42,29 +42,7 @@ const register = async (req: Request, res: Response, next: NextFunction): Promis
   }
 };
 
-const registerClient = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { username, password } = toUser(req.body);
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const newUser = new User({
-      username,
-      password: hashedPassword
-    });
-
-    const savedUser = await newUser.save();
-    res.json(savedUser);
-  } catch (error) {
-    if (error.code === 11000) {
-      error.message = 'Username already exists';
-    }
-    return next(error);
-  }
-};
-
 export default {
   authenticate,
-  register,
-  registerClient
+  register
 };

@@ -1,6 +1,24 @@
 import InvalidRequestError from '../errors/InvalidRequestError';
-import { IUser, AuthorizationRequest, ResponseType, UserRole } from '../types';
+import { IUser, AuthorizationRequest, ResponseType, UserRole, TokenRequest, GrantType } from '../types';
 type UserFields = { username: unknown; password: unknown };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const toTokenRequest = (tokenRequest: any): TokenRequest => {
+  const request: TokenRequest = {
+    grant_type: parseGrantType(tokenRequest.grant_type),
+    code: parseToString(tokenRequest.code, 'code')
+  };
+  if (tokenRequest.client_id) {
+    request.client_id = parseToString(tokenRequest.client_id, 'client_id');
+  }
+  if (tokenRequest.client_secret) {
+    request.client_secret = parseToString(tokenRequest.client_secret, 'client_secret');
+  }
+  if (tokenRequest.redirect_url) {
+    request.redirect_url = parseToString(tokenRequest.redirect_url, 'redirect_url');
+  }
+
+  return request;
+};
 export const toUser = ({ username, password }: UserFields): IUser => {
   const user: IUser = {
     username: parseToString(username, 'username'),
@@ -51,6 +69,18 @@ const parseResponseType = (responseType: unknown): ResponseType => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const isResponseType = (param: any): param is ResponseType => {
   return Object.values(ResponseType).includes(param);
+};
+
+const parseGrantType = (grantType: unknown): GrantType => {
+  if (!grantType || !isGrantType(grantType)) {
+    throw new InvalidRequestError('Incorrect or missing grant_type: ' + grantType);
+  }
+  return grantType;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const isGrantType = (param: any): param is GrantType => {
+  return Object.values(GrantType).includes(param);
 };
 
 /*

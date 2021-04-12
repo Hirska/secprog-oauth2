@@ -1,15 +1,15 @@
 import express from 'express';
 import Auth from './Authentication';
-import Token from './Token';
-import Authorize from './Authorize';
+import { token } from './Token';
+import { authorize } from './Authorize';
 const router = express.Router();
 
-router.get('/authenticate', (_req, res) => {
+router.get('/authorize', (_req, res) => {
   res.render('authenticate');
 });
-router.post('/authenticate', Authorize.authorize);
+router.post('/authorize', authorize);
 router.post('/register', Auth.register);
 
-router.post('/access_token', Token.token);
+router.post('/token', token);
 
 export default router;

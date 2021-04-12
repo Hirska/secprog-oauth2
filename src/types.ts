@@ -1,18 +1,20 @@
-import { Document } from 'mongoose';
+import { Document, ObjectId } from 'mongoose';
 
 export interface ICode extends Document {
-  authorizationCode: string;
-  redirectUri: string;
-  lifetime: number;
+  code: string;
+  redirectUrl: string;
+  expiresAt: number;
   clientId: string;
-  scope: string;
+  scopes: string[];
+  user: ObjectId | DocumentUser;
 }
 
 export interface IClient {
   user: string;
-  redirectUris: string[];
+  redirectUrls: string[];
   clientId: string;
-  clientSecret: string;
+  clientSecret?: string;
+  isConfidential: boolean;
   grants?: string[];
 }
 
@@ -31,6 +33,18 @@ export interface AuthorizationRequest {
   redirect_url?: string;
   scope?: string;
   state?: string;
+}
+
+export interface TokenRequest {
+  grant_type: GrantType;
+  code: string;
+  redirect_url?: string;
+  client_id?: string;
+  client_secret?: string;
+}
+
+export enum GrantType {
+  code = 'authorization_code'
 }
 
 export enum ResponseType {
