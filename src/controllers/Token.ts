@@ -19,28 +19,31 @@ export const token = async (req: Request, res: Response, next: NextFunction): Pr
   try {
     const body = toTokenRequest(req.body);
     const { clientId, clientSecret } = getCredentials(req, body);
-
     const client = await Client.findOne({ clientId: clientId });
 
     if (!client) {
       throw new InvalidClientError('Invalid client');
     }
+
     if (client.isConfidential) {
       if (!clientSecret || !client.clientSecret) {
-        throw new InvalidClientError('Invalid client');
+        throw new InvalidClientError('Invalid credentials');
       }
       const match = await bcrypt.compare(clientSecret, client.clientSecret);
       if (!match) {
-        throw new InvalidClientError('Invalid client');
+        throw new InvalidClientError('Invalid credentials');
       }
     } else {
       //TODO: implement pkce
     }
-
     const code = await Code.findOne({ code: body.code });
 
     if (!code) {
-      throw new InvalidGrantError('Invalid grant');
+      throw new InvalidGrantError('Authorization code not found');
+    }
+
+    if (code.clientId !== client.clientId) {
+      throw new InvalidClientError('Code is not issued to this client');
     }
 
     if (isBefore(new Date(code.expiresAt), Date.now())) {
@@ -48,11 +51,11 @@ export const token = async (req: Request, res: Response, next: NextFunction): Pr
     }
 
     if (code.redirectUrl && code.redirectUrl !== body.redirect_url) {
-      throw new InvalidGrantError('Invalid grant');
+      throw new InvalidGrantError('Invalid redirect url');
     }
 
     //Revoke used authorization code.
-    await code.delete();
+    //await code.delete();
     const access_token = jwt.sign(
       {
         userId: code.user,
@@ -61,7 +64,7 @@ export const token = async (req: Request, res: Response, next: NextFunction): Pr
       JWT_SECRET,
       { expiresIn: JWT_EXPIRATION }
     );
-    res.status(200).json({ access_token, expires_in: JWT_EXPIRATION, token_type: 'bearer' });
+    res.status(200).json({ access_token, expires_in: JWT_EXPIRATION, token_type: 'Bearer' });
   } catch (error) {
     return next(error);
   }

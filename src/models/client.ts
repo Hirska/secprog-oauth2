@@ -1,12 +1,13 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 import { DocumentClient } from '../types';
+import { v4 as uuidv4 } from 'uuid';
 mongoose.set('useFindAndModify', false);
 
 const clientSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   redirectUrls: { type: Array, required: true },
-  clientId: { type: String, required: true },
+  clientId: { type: String, default: uuidv4() },
   clientSecret: { type: String },
   isConfidential: { type: Boolean, required: true },
   grants: { type: Array }

@@ -7,7 +7,7 @@ const codeSchema = new mongoose.Schema({
   redirectUrl: { type: String },
   expiresAt: { type: Number, required: true },
   clientId: { type: String, required: true },
-  scope: { type: Array },
+  scopes: { type: Array },
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 });
 

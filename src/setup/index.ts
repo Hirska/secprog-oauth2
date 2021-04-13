@@ -26,7 +26,6 @@ export default async () => {
 
   console.log(
     await createclient({
-      clientId: process.env.CLIENT_ID,
       clientSecret: process.env.CLIENT_SECRET,
       redirectUrls: [process.env.CLIENT_REDIRECT_URL],
       isConfidential: true

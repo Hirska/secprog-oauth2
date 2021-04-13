@@ -64,8 +64,8 @@ export const authorize = async (req: Request, res: Response, next: NextFunction)
     const code = new Code({
       expiresAt: add(Date.now(), { minutes: 10 }),
       code: crypto.createHash('sha256').update(randomBytes).digest('hex'),
-      clientId: client.id as string,
-      scope: scopes,
+      clientId: client.clientId,
+      scopes: scopes,
       redirectUrl,
       user: user._id as ObjectId
     });

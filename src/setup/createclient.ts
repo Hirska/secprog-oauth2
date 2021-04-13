@@ -2,7 +2,7 @@ import { IClient, DocumentClient, DocumentUser, UserRole } from '../types';
 import Client from '../models/client';
 import User from '../models/user';
 
-export default async (clientConfig: Omit<IClient, 'user'>) => {
+export default async (clientConfig: Omit<IClient, 'user' | 'clientId'>) => {
   const client: DocumentClient | null = await Client.findOne({});
   const user: DocumentUser | null = await User.findOne({ role: UserRole.admin });
   if (client) {
