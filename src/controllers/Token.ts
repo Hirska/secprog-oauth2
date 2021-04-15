@@ -10,10 +10,10 @@ import InvalidRequestError from '../errors/InvalidRequestError';
 import Code from '../models/code';
 import InvalidGrantError from '../errors/InvalidGrantError';
 import InvalidClientError from '../errors/InvalidClientError';
+import settings from '../utils/settings';
 
-// TODO: Find better way
-const JWT_SECRET = process.env.JWT_SECRET || 'secret';
-const JWT_EXPIRATION = process.env.JWT_SECRET || '3600';
+const JWT_SECRET = settings.JWT_SECRET;
+const JWT_EXPIRATION = settings.JWT_LIFETIME;
 
 export const token = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -46,16 +46,13 @@ export const token = async (req: Request, res: Response, next: NextFunction): Pr
       throw new InvalidClientError('Code is not issued to this client');
     }
 
-    if (isBefore(new Date(code.expiresAt), Date.now())) {
+    if (isBefore(Date.now(), new Date(code.expiresAt))) {
       throw new InvalidGrantError('Expired authorization code');
     }
 
     if (code.redirectUrl && code.redirectUrl !== body.redirect_url) {
       throw new InvalidGrantError('Invalid redirect url');
     }
-
-    //Revoke used authorization code.
-    //await code.delete();
     const access_token = jwt.sign(
       {
         userId: code.user,
@@ -64,6 +61,11 @@ export const token = async (req: Request, res: Response, next: NextFunction): Pr
       JWT_SECRET,
       { expiresIn: JWT_EXPIRATION }
     );
+    //Revoke used authorization code.
+    await code.delete();
+
+    res.set('Cache_Control', 'no-store');
+    res.set('Pragma', 'no-cache');
     res.status(200).json({ access_token, expires_in: JWT_EXPIRATION, token_type: 'Bearer' });
   } catch (error) {
     return next(error);

@@ -1,4 +1,3 @@
-import * as dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import express from 'express';
 import exphbs from 'express-handlebars';
@@ -7,8 +6,8 @@ import handleError from './utils/errorHandler';
 import controller from './controllers';
 import path from 'path';
 import setup from './setup';
+import settings from './utils/settings';
 
-dotenv.config();
 const app = express();
 
 /**
@@ -24,21 +23,7 @@ app.engine(
 );
 app.set('view engine', 'hbs');
 
-/**
- * Variables
- */
-if (
-  !process.env.MONGODB_URI ||
-  !process.env.ADMIN_USERNAME ||
-  !process.env.ADMIN_PASSWORD ||
-  !process.env.CLIENT_ID ||
-  !process.env.CLIENT_SECRET ||
-  !process.env.CLIENT_REDIRECT_URL
-) {
-  process.exit(1);
-}
-
-const MONGODB_URI: string = process.env.MONGODB_URI;
+const MONGODB_URI = settings.MONGODB_URI;
 
 mongoose
   .connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true })

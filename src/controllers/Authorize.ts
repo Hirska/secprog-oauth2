@@ -6,7 +6,7 @@ import Scope from '../models/scope';
 import Code from '../models/code';
 import { DocumentUser } from '../types';
 import { toAuthorizationRequest, toUser } from '../utils/utils';
-import InvalidClientError from '../errors/InvalidClientError';
+//import InvalidClientError from '../errors/InvalidClientError';
 import InvalidRequestError from '../errors/InvalidRequestError';
 import InvalidScopeError from '../errors/InvalidScopeError';
 import { add } from 'date-fns';
@@ -21,20 +21,23 @@ const randomBytesAsync = promisify(crypto.randomBytes);
 export const authorize = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const authorization = toAuthorizationRequest(req.query);
-    const { username, password } = toUser(req.body);
+    const { email, password } = toUser(req.body);
 
     const client = await Client.findOne({ clientId: authorization.client_id });
 
     //TODO: MOVE client and redirect url validation to get request
     // Validate client id
     if (!client) {
-      throw new InvalidClientError('Invalid client: client credentials are invalid');
+      return res.render('authenticate', { message: 'No client with given id', messageClass: 'alert-danger' });
+
+      //throw new InvalidClientError('Invalid client: client credentials are invalid');
     }
     // Validate redirect url
     let redirectUrl: string | undefined;
     if (authorization.redirect_url) {
       if (!client.redirectUrls.includes(authorization.redirect_url)) {
-        throw new InvalidRequestError('Invalid redirect url');
+        return res.render('authenticate', { message: 'Redirect url is invalid', messageClass: 'alert-danger' });
+        //throw new InvalidRequestError('Invalid redirect url');
       }
       redirectUrl = authorization.redirect_url;
     } else {
@@ -44,13 +47,14 @@ export const authorize = async (req: Request, res: Response, next: NextFunction)
       authorization.redirect_url = client.redirectUrls[0];
     }
 
-    // TODO: Validate scope
+    //TODO: Handle error by redirecting user back to redirect url.
+    //Validate scope
     let scopes: string[] | undefined;
     if (authorization.scope) {
       scopes = await validateScopes(authorization.scope);
     }
 
-    const user: DocumentUser | null = await User.findOne({ username });
+    const user: DocumentUser | null = await User.findOne({ email });
     if (!user) {
       throw new Error('Username or password wrong');
     }
@@ -60,7 +64,7 @@ export const authorize = async (req: Request, res: Response, next: NextFunction)
     }
     const randomBytes = await randomBytesAsync(48);
 
-    // TODO: Generate new authorization code.
+    //Generate new authorization code.
     const code = new Code({
       expiresAt: add(Date.now(), { minutes: 10 }),
       code: crypto.createHash('sha256').update(randomBytes).digest('hex'),
@@ -72,13 +76,13 @@ export const authorize = async (req: Request, res: Response, next: NextFunction)
     await code.save();
 
     const queryparams = generateQuerystring(code.code, authorization.state);
-    //TODO: redirect authorization code to callback address.
+
+    //redirect authorization code to callback address.
     res.redirect(`${authorization.redirect_url}?${queryparams}`);
   } catch (error) {
     return next(error);
   }
 };
-
 const validateScopes = async (scope: string) => {
   const scopes: string[] = scope.split(' ');
 

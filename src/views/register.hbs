@@ -1,0 +1,33 @@
+<div class="container">
+  <div class="row">
+    <div class="col-sm-9 col-md-7 col-lg-5 mx-auto">
+      <div class="card card-signup my-5">
+        <div class="card-body">
+          {{#if message}}
+              <div class="alert {{messageClass}}" role="alert">
+                  {{message}}
+              </div>
+          {{/if}}
+          <h5 class="card-title text-center">Sign up</h5>
+          <form class="form-signup" method="POST">
+            <div class="form-label-group">
+              <input type="email" name="email" id="email" class="form-control" placeholder="Email address" required
+                autofocus>
+              <label for="username">Email address</label>
+            </div>
+
+            <div class="form-label-group">
+              <input type="password" name="password" id="password" class="form-control" placeholder="Password" required>
+              <label for="password">Password</label>
+            </div>
+            <div class="form-label-group">
+              <input type="password" name="password" id="password" class="form-control" placeholder="Re-enter your password" required>
+              <label for="password">Re-enter password</label>
+            </div>
+            <button class="btn btn-lg btn-primary btn-block text-uppercase" type="submit">Sign up</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

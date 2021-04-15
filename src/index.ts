@@ -1,10 +1,8 @@
 import app from './app';
 import http = require('http');
+import settings from './utils/settings';
 
-const port = process.env.PORT;
-if (!port) {
-  process.exit(1);
-}
+const port = settings.PORT;
 
 http.createServer(app);
 

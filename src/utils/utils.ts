@@ -1,6 +1,6 @@
 import InvalidRequestError from '../errors/InvalidRequestError';
 import { IUser, AuthorizationRequest, ResponseType, UserRole, TokenRequest, GrantType } from '../types';
-type UserFields = { username: unknown; password: unknown };
+type UserFields = { email: unknown; password: unknown };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const toTokenRequest = (tokenRequest: any): TokenRequest => {
   const request: TokenRequest = {
@@ -19,9 +19,9 @@ export const toTokenRequest = (tokenRequest: any): TokenRequest => {
 
   return request;
 };
-export const toUser = ({ username, password }: UserFields): IUser => {
+export const toUser = ({ email, password }: UserFields): IUser => {
   const user: IUser = {
-    username: parseToString(username, 'username'),
+    email: parseToString(email, 'email'),
     password: parseToString(password, 'password'),
     role: UserRole.user
   };

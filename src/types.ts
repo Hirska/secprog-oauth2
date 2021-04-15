@@ -19,13 +19,14 @@ export interface IClient {
 }
 
 export interface IUser {
-  username: string;
+  email: string;
   password: string;
   role: UserRole;
 }
 
 export interface IScope {
   scope: string;
+  description: string;
 }
 export interface AuthorizationRequest {
   response_type: ResponseType;
@@ -48,8 +49,7 @@ export enum GrantType {
 }
 
 export enum ResponseType {
-  code = 'code',
-  token = 'token'
+  code = 'code'
 }
 
 export enum UserRole {
