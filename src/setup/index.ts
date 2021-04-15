@@ -21,5 +21,5 @@ export default async () => {
     })
   );
 
-  console.log(await createscope());
+  console.log(await createscope({ scope: 'profile', description: 'This gives access to your profile information' }));
 };

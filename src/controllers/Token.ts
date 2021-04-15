@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import auth from 'basic-auth';
 import bcrypt from 'bcrypt';
-import { isBefore } from 'date-fns';
 import jwt from 'jsonwebtoken';
 import { toTokenRequest } from '../utils/utils';
 import Client from '../models/client';
@@ -45,8 +44,7 @@ export const token = async (req: Request, res: Response, next: NextFunction): Pr
     if (code.clientId !== client.clientId) {
       throw new InvalidClientError('Code is not issued to this client');
     }
-
-    if (isBefore(Date.now(), new Date(code.expiresAt))) {
+    if (Date.now() > code.expiresAt) {
       throw new InvalidGrantError('Expired authorization code');
     }
 
