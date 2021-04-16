@@ -1,3 +1,5 @@
+import Joi from 'joi';
+import joi from 'joi';
 import InvalidRequestError from '../errors/InvalidRequestError';
 import { IUser, AuthorizationRequest, ResponseType, UserRole, TokenRequest, GrantType } from '../types';
 type UserFields = { email: unknown; password: unknown };
@@ -48,18 +50,25 @@ export const toAuthorizationRequest = (authorizationRequest: any): Authorization
   return authorization;
 };
 
-const parseToString = (param: unknown, paramName: string): string => {
+export const parseToString = (param: unknown, paramName: string): string => {
   if (!param || !isString(param)) {
     throw new InvalidRequestError(`Incorrect or missing ${paramName}:` + param);
   }
   return param;
 };
 
-const isString = (text: unknown): text is string => {
+export const parseToStringOrUndefined = (param: unknown): string | undefined => {
+  if (!param || !isString(param)) {
+    return undefined;
+  }
+  return param;
+};
+
+export const isString = (text: unknown): text is string => {
   return typeof text === 'string' || text instanceof String;
 };
 
-const parseResponseType = (responseType: unknown): ResponseType => {
+export const parseResponseType = (responseType: unknown): ResponseType => {
   if (!responseType || !isResponseType(responseType)) {
     throw new InvalidRequestError('Incorrect or missing response_type: ' + responseType);
   }
@@ -82,21 +91,6 @@ const parseGrantType = (grantType: unknown): GrantType => {
 const isGrantType = (param: any): param is GrantType => {
   return Object.values(GrantType).includes(param);
 };
-
-/*
-const parseUserRole = (userRole: unknown): UserRole => {
-  if (!userRole || !isUserRole(userRole)) {
-    throw new Error('Incorrect or missing userRole: ' + userRole);
-  }
-  return userRole;
-};
-
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const isUserRole = (param: any): param is UserRole => {
-  return Object.values(UserRole).includes(param);
-};
-*/
 
 /**
  * Helper function for exhaustive type checking

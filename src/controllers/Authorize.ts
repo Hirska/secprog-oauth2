@@ -4,10 +4,8 @@ import User from '../models/user';
 import Client from '../models/client';
 import Scope from '../models/scope';
 import Code from '../models/code';
-import { DocumentUser } from '../types';
-import { toAuthorizationRequest, toUser } from '../utils/utils';
-//import InvalidClientError from '../errors/InvalidClientError';
-import InvalidRequestError from '../errors/InvalidRequestError';
+import { DocumentUser, DocumentClient } from '../types';
+import { parseToStringOrUndefined, toUser, parseResponseType } from '../utils/parse';
 import InvalidScopeError from '../errors/InvalidScopeError';
 import { add } from 'date-fns';
 
@@ -20,50 +18,36 @@ const randomBytesAsync = promisify(crypto.randomBytes);
 
 export const authorize = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const authorization = toAuthorizationRequest(req.query);
+    const client = await validateClient(req.query.client_id);
+
+    if (client === null) {
+      return res.render('authenticate', { message: 'Invalid client identification', messageClass: 'alert-danger' });
+    }
+
+    const redirectUrl = validateRedirectUrl(req.query.redirect_url, client);
+
+    if (redirectUrl === null) {
+      return res.render('authenticate', { message: 'Invalid or missing redirect url', messageClass: 'alert-danger' });
+    }
+
+    //Redirect user back to redirect url if invalid response_type
+    parseResponseType(req.query.response_type);
+
+    //Validate scopes. Is optional
+    const scopes: string[] | undefined = await getScopes(req.query.scope);
+
     const { email, password } = toUser(req.body);
-
-    const client = await Client.findOne({ clientId: authorization.client_id });
-
-    //TODO: MOVE client and redirect url validation to get request
-    // Validate client id
-    if (!client) {
-      return res.render('authenticate', { message: 'No client with given id', messageClass: 'alert-danger' });
-
-      //throw new InvalidClientError('Invalid client: client credentials are invalid');
-    }
-    // Validate redirect url
-    let redirectUrl: string | undefined;
-    if (authorization.redirect_url) {
-      if (!client.redirectUrls.includes(authorization.redirect_url)) {
-        return res.render('authenticate', { message: 'Redirect url is invalid', messageClass: 'alert-danger' });
-        //throw new InvalidRequestError('Invalid redirect url');
-      }
-      redirectUrl = authorization.redirect_url;
-    } else {
-      if (client.redirectUrls.length > 1) {
-        throw new InvalidRequestError('Redirect url missing');
-      }
-      authorization.redirect_url = client.redirectUrls[0];
-    }
-
-    //TODO: Handle error by redirecting user back to redirect url.
-    //Validate scope
-    let scopes: string[] | undefined;
-    if (authorization.scope) {
-      scopes = await validateScopes(authorization.scope);
-    }
-
     const user: DocumentUser | null = await User.findOne({ email });
     if (!user) {
-      throw new Error('Username or password wrong');
+      return res.render('authenticate', { message: 'Invalid username or password', messageClass: 'alert-danger' });
     }
     const comparePassword = await bcrypt.compare(password, user.password);
     if (!comparePassword) {
-      throw new Error('Username or password wrong');
+      return res.render('authenticate', { message: 'Invalid username or password', messageClass: 'alert-danger' });
     }
     const randomBytes = await randomBytesAsync(48);
 
+    const state = parseToStringOrUndefined(req.query.state);
     //Generate new authorization code.
     const code = new Code({
       expiresAt: add(Date.now(), { minutes: 10 }),
@@ -75,16 +59,20 @@ export const authorize = async (req: Request, res: Response, next: NextFunction)
     });
     await code.save();
 
-    const queryparams = generateQuerystring(code.code, authorization.state);
+    const queryparams = generateQuerystring(code.code, state);
 
     //redirect authorization code to callback address.
-    res.redirect(`${authorization.redirect_url}?${queryparams}`);
+    res.redirect(`${redirectUrl}?${queryparams}`);
   } catch (error) {
     return next(error);
   }
 };
-const validateScopes = async (scope: string) => {
-  const scopes: string[] = scope.split(' ');
+const getScopes = async (scope: unknown): Promise<string[] | undefined> => {
+  const scopeString = parseToStringOrUndefined(scope);
+  if (!scopeString) {
+    return undefined;
+  }
+  const scopes: string[] = scopeString.split(' ');
 
   for (const scope of scopes) {
     const validScope = await Scope.findOne({ scope: scope });
@@ -96,9 +84,38 @@ const validateScopes = async (scope: string) => {
   return scopes;
 };
 
+const validateClient = async (client_id: unknown): Promise<DocumentClient | null> => {
+  const clientId = parseToStringOrUndefined(client_id);
+  if (!clientId) {
+    return null;
+  }
+  const client = await Client.findOne({ clientId });
+
+  if (!client) {
+    return null;
+  }
+  return client;
+};
+
+const validateRedirectUrl = (redirect_url: unknown, client: DocumentClient): string | null => {
+  const redirectUrl = parseToStringOrUndefined(redirect_url);
+
+  if (redirectUrl) {
+    if (!client.redirectUrls.includes(redirectUrl)) {
+      return null;
+    }
+    return redirectUrl;
+  }
+  if (client.redirectUrls.length !== 1) {
+    return null;
+  }
+  return client.redirectUrls[0];
+};
+
 const generateQuerystring = (code: string, state: string | undefined): string => {
-  //TODO: remove state if it is undefined
-  if (state) return querystring.stringify({ code, state });
+  if (state) {
+    return querystring.stringify({ code, state });
+  }
 
   return querystring.stringify({ code });
 };
