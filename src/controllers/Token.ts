@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import auth from 'basic-auth';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { toTokenRequest } from '../utils/utils';
+import { toTokenRequest } from '../utils/parse';
 import Client from '../models/client';
 import { TokenRequest } from '../types';
 import InvalidRequestError from '../errors/InvalidRequestError';

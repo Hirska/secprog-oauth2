@@ -14,6 +14,7 @@ export interface IClient {
   redirectUrls: string[];
   clientId: string;
   clientSecret?: string;
+  clientName: string;
   isConfidential: boolean;
   grants?: string[];
 }

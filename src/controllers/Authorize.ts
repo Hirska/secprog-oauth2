@@ -34,7 +34,7 @@ export const authorize = async (req: Request, res: Response, next: NextFunction)
     parseResponseType(req.query.response_type);
 
     //Validate scopes. Is optional
-    const scopes: string[] | undefined = await getScopes(req.query.scope);
+    const scopes: string[] | undefined = await validateScopes(req.query.scope, redirectUrl);
 
     const { email, password } = toUser(req.body);
     const user: DocumentUser | null = await User.findOne({ email });
@@ -67,7 +67,8 @@ export const authorize = async (req: Request, res: Response, next: NextFunction)
     return next(error);
   }
 };
-const getScopes = async (scope: unknown): Promise<string[] | undefined> => {
+
+export const validateScopes = async (scope: unknown, redirectUrl: string): Promise<string[] | undefined> => {
   const scopeString = parseToStringOrUndefined(scope);
   if (!scopeString) {
     return undefined;
@@ -78,13 +79,13 @@ const getScopes = async (scope: unknown): Promise<string[] | undefined> => {
     const validScope = await Scope.findOne({ scope: scope });
 
     if (!validScope) {
-      throw new InvalidScopeError(`Invalid scope: ${scope}`);
+      throw new InvalidScopeError(`Invalid scope: ${scope}`, redirectUrl);
     }
   }
   return scopes;
 };
 
-const validateClient = async (client_id: unknown): Promise<DocumentClient | null> => {
+export const validateClient = async (client_id: unknown): Promise<DocumentClient | null> => {
   const clientId = parseToStringOrUndefined(client_id);
   if (!clientId) {
     return null;
@@ -97,7 +98,7 @@ const validateClient = async (client_id: unknown): Promise<DocumentClient | null
   return client;
 };
 
-const validateRedirectUrl = (redirect_url: unknown, client: DocumentClient): string | null => {
+export const validateRedirectUrl = (redirect_url: unknown, client: DocumentClient): string | null => {
   const redirectUrl = parseToStringOrUndefined(redirect_url);
 
   if (redirectUrl) {
@@ -112,7 +113,7 @@ const validateRedirectUrl = (redirect_url: unknown, client: DocumentClient): str
   return client.redirectUrls[0];
 };
 
-const generateQuerystring = (code: string, state: string | undefined): string => {
+export const generateQuerystring = (code: string, state: string | undefined): string => {
   if (state) {
     return querystring.stringify({ code, state });
   }

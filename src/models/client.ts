@@ -9,6 +9,7 @@ const clientSchema = new mongoose.Schema({
   redirectUrls: { type: Array, required: true },
   clientId: { type: String, default: uuidv4() },
   clientSecret: { type: String },
+  clientName: { type: String },
   isConfidential: { type: Boolean, required: true },
   grants: { type: Array }
 });

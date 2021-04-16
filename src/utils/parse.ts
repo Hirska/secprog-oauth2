@@ -1,5 +1,3 @@
-import Joi from 'joi';
-import joi from 'joi';
 import InvalidRequestError from '../errors/InvalidRequestError';
 import { IUser, AuthorizationRequest, ResponseType, UserRole, TokenRequest, GrantType } from '../types';
 type UserFields = { email: unknown; password: unknown };

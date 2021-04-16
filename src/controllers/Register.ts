@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import User from '../models/user';
-import { toUser } from '../utils/utils';
+import { parseToStringOrUndefined, toUser } from '../utils/parse';
 
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -17,6 +17,11 @@ export const register = async (req: Request, res: Response, next: NextFunction):
     });
 
     await newUser.save();
+
+    const returnTo = parseToStringOrUndefined(req.query.return_to);
+    if (returnTo) {
+      return res.redirect(returnTo);
+    }
     return res.render('register', { message: `New user successfully created`, messageClass: 'alert-success' });
   } catch (error) {
     if (error.code === 11000) {
