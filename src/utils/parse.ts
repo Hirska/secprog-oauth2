@@ -1,5 +1,13 @@
 import InvalidRequestError from '../errors/InvalidRequestError';
-import { IUser, AuthorizationRequest, ResponseType, UserRole, TokenRequest, GrantType } from '../types';
+import {
+  IUser,
+  AuthorizationRequest,
+  ResponseType,
+  UserRole,
+  TokenRequest,
+  GrantType,
+  CodeChallengeMethod
+} from '../types';
 type UserFields = { email: unknown; password: unknown };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const toTokenRequest = (tokenRequest: any): TokenRequest => {
@@ -57,7 +65,7 @@ export const parseToString = (param: unknown, paramName: string): string => {
 
 export const parseToStringOrUndefined = (param: unknown): string | undefined => {
   if (!param || !isString(param)) {
-    return undefined;
+    return;
   }
   return param;
 };
@@ -88,6 +96,22 @@ const parseGrantType = (grantType: unknown): GrantType => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const isGrantType = (param: any): param is GrantType => {
   return Object.values(GrantType).includes(param);
+};
+
+export const parseCodeChallengeMethod = (challengeMethod: unknown): CodeChallengeMethod | undefined => {
+  //Defaults to plain if challenge_method is omitted
+  if (!challengeMethod) {
+    return CodeChallengeMethod.plain;
+  }
+  if (!isCodeChallengeMethod(challengeMethod)) {
+    return;
+  }
+  return challengeMethod;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const isCodeChallengeMethod = (param: any): param is CodeChallengeMethod => {
+  return Object.values(CodeChallengeMethod).includes(param);
 };
 
 /**

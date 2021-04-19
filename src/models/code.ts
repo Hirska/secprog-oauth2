@@ -8,7 +8,9 @@ const codeSchema = new mongoose.Schema({
   expiresAt: { type: Number, required: true },
   clientId: { type: String, required: true },
   scopes: { type: Array },
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  codeChallenge: { type: String },
+  codeChallengeMethod: { type: String }
 });
 
 export default mongoose.model<ICode>('Code', codeSchema);

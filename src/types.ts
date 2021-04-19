@@ -7,6 +7,8 @@ export interface ICode extends Document {
   clientId: string;
   scopes: string[];
   user: ObjectId | DocumentUser;
+  codeChallenge?: string;
+  codeChallengeMethod?: string;
 }
 
 export interface IClient {
@@ -56,6 +58,11 @@ export enum ResponseType {
 export enum UserRole {
   admin = 'admin',
   user = 'user'
+}
+
+export enum CodeChallengeMethod {
+  S256 = 'S256',
+  plain = 'plain'
 }
 export interface DocumentClient extends IClient, Document {}
 export interface DocumentUser extends IUser, Document {}

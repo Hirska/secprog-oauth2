@@ -5,7 +5,7 @@ import Client from '../models/client';
 import Scope from '../models/scope';
 import Code from '../models/code';
 import { DocumentUser, DocumentClient } from '../types';
-import { parseToStringOrUndefined, toUser, parseResponseType } from '../utils/parse';
+import { parseToStringOrUndefined, toUser, parseResponseType, parseCodeChallengeMethod } from '../utils/parse';
 import InvalidScopeError from '../errors/InvalidScopeError';
 import { add } from 'date-fns';
 
@@ -13,6 +13,7 @@ import querystring from 'querystring';
 import crypto from 'crypto';
 import { promisify } from 'util';
 import { ObjectId } from 'mongoose';
+import InvalidRequestError from '../errors/InvalidRequestError';
 
 const randomBytesAsync = promisify(crypto.randomBytes);
 
@@ -20,15 +21,23 @@ export const authorize = async (req: Request, res: Response, next: NextFunction)
   try {
     const client = await validateClient(req.query.client_id);
 
-    if (client === null) {
+    if (!client) {
       return res.render('authenticate', { message: 'Invalid client identification', messageClass: 'alert-danger' });
     }
 
     const redirectUrl = validateRedirectUrl(req.query.redirect_url, client);
 
-    if (redirectUrl === null) {
+    if (!redirectUrl) {
       return res.render('authenticate', { message: 'Invalid or missing redirect url', messageClass: 'alert-danger' });
     }
+
+    //Code challenge for public clients
+    const { codeChallenge, codeChallengeMethod } = validateCodeChallenge(
+      req.query.code_challenge,
+      req.query.code_challenge_method,
+      client,
+      redirectUrl
+    );
 
     //Redirect user back to redirect url if invalid response_type
     parseResponseType(req.query.response_type);
@@ -55,7 +64,9 @@ export const authorize = async (req: Request, res: Response, next: NextFunction)
       clientId: client.clientId,
       scopes: scopes,
       redirectUrl,
-      user: user._id as ObjectId
+      user: user._id as ObjectId,
+      codeChallenge,
+      codeChallengeMethod
     });
     await code.save();
 
@@ -85,32 +96,56 @@ export const validateScopes = async (scope: unknown, redirectUrl: string): Promi
   return scopes;
 };
 
-export const validateClient = async (client_id: unknown): Promise<DocumentClient | null> => {
+export const validateClient = async (client_id: unknown): Promise<DocumentClient | undefined> => {
   const clientId = parseToStringOrUndefined(client_id);
   if (!clientId) {
-    return null;
+    return;
   }
   const client = await Client.findOne({ clientId });
 
   if (!client) {
-    return null;
+    return;
   }
   return client;
 };
 
-export const validateRedirectUrl = (redirect_url: unknown, client: DocumentClient): string | null => {
+export const validateRedirectUrl = (redirect_url: unknown, client: DocumentClient): string | undefined => {
   const redirectUrl = parseToStringOrUndefined(redirect_url);
 
   if (redirectUrl) {
     if (!client.redirectUrls.includes(redirectUrl)) {
-      return null;
+      return;
     }
     return redirectUrl;
   }
   if (client.redirectUrls.length !== 1) {
-    return null;
+    return;
   }
   return client.redirectUrls[0];
+};
+
+const validateCodeChallenge = (
+  code_challenge: unknown,
+  code_challenge_method: unknown,
+  client: DocumentClient,
+  redirect_url: string
+) => {
+  if (client.isConfidential) {
+    return { codeChallenge: undefined, codeChallengeMethod: undefined };
+  }
+
+  const codeChallenge = parseToStringOrUndefined(code_challenge);
+  const codeChallengeMethod = parseCodeChallengeMethod(code_challenge_method);
+
+  if (!codeChallenge) {
+    throw new InvalidRequestError('Code challenge missing', redirect_url);
+  }
+
+  if (!codeChallengeMethod) {
+    throw new InvalidRequestError('Code challenge method missing', redirect_url);
+  }
+
+  return { codeChallenge, codeChallengeMethod };
 };
 
 export const generateQuerystring = (code: string, state: string | undefined): string => {
