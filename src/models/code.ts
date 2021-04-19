@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { ICode } from '../types';
+import { DocumentCode } from '../types';
 mongoose.set('useFindAndModify', false);
 
 const codeSchema = new mongoose.Schema({
@@ -13,4 +13,4 @@ const codeSchema = new mongoose.Schema({
   codeChallengeMethod: { type: String }
 });
 
-export default mongoose.model<ICode>('Code', codeSchema);
+export default mongoose.model<DocumentCode>('Code', codeSchema);

@@ -1,6 +1,6 @@
 import { Document, ObjectId } from 'mongoose';
 
-export interface ICode extends Document {
+export interface ICode {
   code: string;
   redirectUrl: string;
   expiresAt: number;
@@ -45,6 +45,7 @@ export interface TokenRequest {
   redirect_url?: string;
   client_id?: string;
   client_secret?: string;
+  code_verifier?: string;
 }
 
 export enum GrantType {
@@ -66,5 +67,5 @@ export enum CodeChallengeMethod {
 }
 export interface DocumentClient extends IClient, Document {}
 export interface DocumentUser extends IUser, Document {}
-export interface DocumentClient extends IClient, Document {}
 export interface DocumentScope extends IScope, Document {}
+export interface DocumentCode extends ICode, Document {}

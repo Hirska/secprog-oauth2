@@ -15,10 +15,9 @@ export default async () => {
 
   console.log(
     await createclient({
-      clientSecret: settings.CLIENT_SECRET,
       redirectUrls: [settings.CLIENT_REDIRECT_URL],
       clientName: 'TestApp',
-      isConfidential: true
+      isConfidential: false
     })
   );
 

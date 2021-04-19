@@ -25,6 +25,7 @@ export const authorize = async (req: Request, res: Response, next: NextFunction)
       return res.render('authenticate', { message: 'Invalid client identification', messageClass: 'alert-danger' });
     }
 
+    //Redirect url is required
     const redirectUrl = validateRedirectUrl(req.query.redirect_url, client);
 
     if (!redirectUrl) {
@@ -118,10 +119,7 @@ export const validateRedirectUrl = (redirect_url: unknown, client: DocumentClien
     }
     return redirectUrl;
   }
-  if (client.redirectUrls.length !== 1) {
-    return;
-  }
-  return client.redirectUrls[0];
+  return;
 };
 
 const validateCodeChallenge = (

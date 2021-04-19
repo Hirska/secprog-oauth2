@@ -1,11 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import auth from 'basic-auth';
+import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { toTokenRequest } from '../utils/parse';
 import Client from '../models/client';
-import { TokenRequest } from '../types';
-import InvalidRequestError from '../errors/InvalidRequestError';
+import { CodeChallengeMethod, TokenRequest, DocumentCode } from '../types';
 import Code from '../models/code';
 import InvalidGrantError from '../errors/InvalidGrantError';
 import InvalidClientError from '../errors/InvalidClientError';
@@ -23,6 +23,11 @@ export const token = async (req: Request, res: Response, next: NextFunction): Pr
     if (!client) {
       throw new InvalidClientError('Invalid client');
     }
+    const code = await Code.findOne({ code: body.code });
+
+    if (!code) {
+      throw new InvalidGrantError('Authorization code not found');
+    }
 
     if (client.isConfidential) {
       if (!clientSecret || !client.clientSecret) {
@@ -33,12 +38,12 @@ export const token = async (req: Request, res: Response, next: NextFunction): Pr
         throw new InvalidClientError('Invalid credentials');
       }
     } else {
-      //TODO: implement pkce
-    }
-    const code = await Code.findOne({ code: body.code });
-
-    if (!code) {
-      throw new InvalidGrantError('Authorization code not found');
+      if (!body.code_verifier) {
+        throw new InvalidGrantError('Code verifier missing');
+      }
+      if (!validateCodeVerifier(body.code_verifier, code)) {
+        throw new InvalidGrantError('Invalid code verifier');
+      }
     }
 
     if (code.clientId !== client.clientId) {
@@ -77,9 +82,27 @@ const getCredentials = (req: Request, body: TokenRequest) => {
     return { clientId: credentials.name, clientSecret: credentials.pass };
   }
   if (!body.client_id) {
-    throw new InvalidRequestError('client_id missing');
+    throw new InvalidClientError('client_id missing');
   }
   return { clientId: body.client_id, clientSecret: body.client_secret };
+};
+
+const validateCodeVerifier = (codeVerifier: string, code: DocumentCode) => {
+  const codeChallengeMethod = code.codeChallengeMethod;
+  const codeChallenge = code.codeChallenge;
+
+  if (!codeChallenge || !codeChallengeMethod) {
+    throw new InvalidGrantError('Invalid code challenge');
+  }
+  switch (codeChallengeMethod) {
+    case CodeChallengeMethod.S256:
+      const hash = crypto.createHash('sha256').update(codeVerifier).digest('hex');
+      return Buffer.from(hash).toString('base64') === codeChallenge;
+    case CodeChallengeMethod.plain:
+      return codeVerifier === codeChallenge;
+    default:
+      throw new InvalidGrantError('Invalid code challenge method');
+  }
 };
 
 export default {

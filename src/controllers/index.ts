@@ -8,13 +8,13 @@ const router = express.Router();
 router.get('/authorize', async (req, res, next) => {
   try {
     const client = await validateClient(req.query.client_id);
-    if (client === null) {
+    if (!client) {
       return res.render('authenticate', { message: 'Invalid client identification', messageClass: 'alert-danger' });
     }
 
     const redirectUrl = validateRedirectUrl(req.query.redirect_url, client);
 
-    if (redirectUrl === null) {
+    if (!redirectUrl) {
       return res.render('authenticate', { message: 'Invalid or missing redirect url', messageClass: 'alert-danger' });
     }
 

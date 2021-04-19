@@ -24,6 +24,9 @@ export const toTokenRequest = (tokenRequest: any): TokenRequest => {
   if (tokenRequest.redirect_url) {
     request.redirect_url = parseToString(tokenRequest.redirect_url, 'redirect_url');
   }
+  if (tokenRequest.code_verifier) {
+    request.code_verifier = parseToString(tokenRequest.code_verifier, 'code_verifier');
+  }
 
   return request;
 };
