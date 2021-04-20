@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import express from 'express';
+import helmet from 'helmet';
 import exphbs from 'express-handlebars';
 import cors from 'cors';
 import handleError from './utils/errorHandler';
@@ -40,6 +41,7 @@ mongoose
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
+app.use(helmet());
 
 app.use('/', controller);
 app.use(handleError);

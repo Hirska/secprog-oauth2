@@ -1,5 +1,9 @@
-import { Document, ObjectId } from 'mongoose';
+import { Document, ObjectId, Schema } from 'mongoose';
 
+export interface JWTData {
+  userId: Schema.Types.ObjectId;
+  scopes: string[];
+}
 export interface ICode {
   code: string;
   redirectUrl: string;

@@ -66,9 +66,6 @@ export const token = async (req: Request, res: Response, next: NextFunction): Pr
     );
     //Revoke used authorization code.
     await code.delete();
-
-    res.set('Cache_Control', 'no-store');
-    res.set('Pragma', 'no-cache');
     res.status(200).json({ access_token, expires_in: JWT_EXPIRATION, token_type: 'Bearer' });
   } catch (error) {
     return next(error);

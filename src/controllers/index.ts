@@ -3,6 +3,7 @@ import querystring from 'querystring';
 import { token } from './Token';
 import { authorize, validateClient, validateRedirectUrl, validateScopes } from './Authorize';
 import { register } from './Register';
+import authenticate from '../middleware/authenticate';
 const router = express.Router();
 
 router.get('/authorize', async (req, res, next) => {
@@ -40,5 +41,9 @@ router.get('/register', (_req, res) => {
   res.render('register');
 });
 router.post('/register', register);
+
+router.get('/secure', authenticate('profile'), (_req, res, _next) => {
+  res.json('this is secured endpoint');
+});
 
 export default router;
