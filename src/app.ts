@@ -3,7 +3,7 @@ import express from 'express';
 import helmet from 'helmet';
 import exphbs from 'express-handlebars';
 import handleError from './utils/errorHandler';
-import controller from './controllers';
+import controllers from './controllers';
 import path from 'path';
 import setup from './setup';
 import settings from './utils/settings';
@@ -41,7 +41,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
 
-app.use('/', controller);
+app.use('/', controllers);
+
+app.use((_req, res) => {
+  res.sendStatus(404);
+});
+
 app.use(handleError);
 
 export default app;

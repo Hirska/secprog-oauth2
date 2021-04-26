@@ -22,14 +22,14 @@ export const authorize = async (req: Request, res: Response, next: NextFunction)
     const client = await validateClient(req.query.client_id);
 
     if (!client) {
-      return res.render('authenticate', { message: 'Invalid client identification', messageClass: 'alert-danger' });
+      return res.render('error', { message: 'Invalid client identification', messageClass: 'alert-danger' });
     }
 
     //Redirect url is required
     const redirectUrl = validateRedirectUrl(req.query.redirect_url, client);
 
     if (!redirectUrl) {
-      return res.render('authenticate', { message: 'Invalid or missing redirect url', messageClass: 'alert-danger' });
+      return res.render('error', { message: 'Invalid or missing redirect url', messageClass: 'alert-danger' });
     }
 
     //Code challenge for public clients
@@ -49,11 +49,17 @@ export const authorize = async (req: Request, res: Response, next: NextFunction)
     const { email, password } = toUser(req.body);
     const user: DocumentUser | null = await User.findOne({ email });
     if (!user) {
-      return res.render('authenticate', { message: 'Invalid username or password', messageClass: 'alert-danger' });
+      return res.render(
+        'authorize',
+        generateInputObject(req, scopes, client.clientName, 'Invalid username or password')
+      );
     }
     const comparePassword = await bcrypt.compare(password, user.password);
     if (!comparePassword) {
-      return res.render('authenticate', { message: 'Invalid username or password', messageClass: 'alert-danger' });
+      return res.render(
+        'authorize',
+        generateInputObject(req, scopes, client.clientName, 'Invalid username or password')
+      );
     }
     const randomBytes = await randomBytesAsync(48);
 
@@ -152,6 +158,13 @@ export const generateQuerystring = (code: string, state: string | undefined): st
   }
 
   return querystring.stringify({ code });
+};
+
+export const generateInputObject = (req: Request, scopes: string[] | undefined, client: string, message?: string) => {
+  const returnTo = querystring.stringify({ return_to: req.originalUrl });
+  const accessDenied = querystring.stringify({ error: 'access_denied' });
+
+  return { message, messageClass: 'alert-danger', scopes, returnTo, accessDenied, client };
 };
 
 export default {
