@@ -2,7 +2,6 @@ import mongoose from 'mongoose';
 import express from 'express';
 import helmet from 'helmet';
 import exphbs from 'express-handlebars';
-import cors from 'cors';
 import handleError from './utils/errorHandler';
 import controller from './controllers';
 import path from 'path';
@@ -40,7 +39,6 @@ mongoose
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
 app.use(helmet());
 
 app.use('/', controller);

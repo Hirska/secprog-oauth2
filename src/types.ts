@@ -1,7 +1,7 @@
-import { Document, ObjectId, Schema } from 'mongoose';
-
+import { Document, ObjectId } from 'mongoose';
+import { Request } from 'express';
 export interface JWTData {
-  userId: Schema.Types.ObjectId;
+  userId: string;
   scopes: string[];
 }
 export interface ICode {
@@ -73,3 +73,7 @@ export interface DocumentClient extends IClient, Document {}
 export interface DocumentUser extends IUser, Document {}
 export interface DocumentScope extends IScope, Document {}
 export interface DocumentCode extends ICode, Document {}
+
+export interface AuthenticatedRequest extends Request {
+  user?: string;
+}
