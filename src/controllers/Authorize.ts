@@ -4,7 +4,7 @@ import User from '../models/user';
 import Client from '../models/client';
 import Scope from '../models/scope';
 import Code from '../models/code';
-import { DocumentUser, DocumentClient } from '../types';
+import { DocumentUser, DocumentClient, DocumentScope } from '../types';
 import { parseToStringOrUndefined, toUser, parseResponseType, parseCodeChallengeMethod } from '../utils/parse';
 import InvalidScopeError from '../errors/InvalidScopeError';
 import { add } from 'date-fns';
@@ -14,23 +14,14 @@ import crypto from 'crypto';
 import { promisify } from 'util';
 import { ObjectId } from 'mongoose';
 import InvalidRequestError from '../errors/InvalidRequestError';
+import { emailSchema, urlSchema } from '../utils/validate';
+import InvalidClientError from '../errors/InvalidClientError';
 
 const randomBytesAsync = promisify(crypto.randomBytes);
 
-export const authorize = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const postAuthorize = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const client = await validateClient(req.query.client_id);
-
-    if (!client) {
-      return res.render('error', { message: 'Invalid client identification', messageClass: 'alert-danger' });
-    }
-
-    //Redirect url is required
-    const redirectUrl = validateRedirectUrl(req.query.redirect_url, client);
-
-    if (!redirectUrl) {
-      return res.render('error', { message: 'Invalid or missing redirect url', messageClass: 'alert-danger' });
-    }
+    const { client, redirectUrl, scopes } = await validateAuthorizeRequest(req);
 
     //Code challenge for public clients
     const { codeChallenge, codeChallengeMethod } = validateCodeChallenge(
@@ -43,24 +34,21 @@ export const authorize = async (req: Request, res: Response, next: NextFunction)
     //Redirect user back to redirect url if invalid response_type
     parseResponseType(req.query.response_type);
 
-    //Validate scopes. Is optional
-    const scopes: string[] | undefined = await validateScopes(req.query.scope, redirectUrl);
+    const user = await validateUser(req.body);
 
-    const { email, password } = toUser(req.body);
-    const user: DocumentUser | null = await User.findOne({ email });
     if (!user) {
       return res.render(
         'authorize',
-        generateInputObject(req, scopes, client.clientName, 'Invalid username or password')
+        generateInputObject(
+          req,
+          scopes?.map((scope) => scope.description),
+          client.clientName,
+          redirectUrl,
+          'Invalid username or password'
+        )
       );
     }
-    const comparePassword = await bcrypt.compare(password, user.password);
-    if (!comparePassword) {
-      return res.render(
-        'authorize',
-        generateInputObject(req, scopes, client.clientName, 'Invalid username or password')
-      );
-    }
+
     const randomBytes = await randomBytesAsync(48);
 
     const state = parseToStringOrUndefined(req.query.state);
@@ -69,7 +57,7 @@ export const authorize = async (req: Request, res: Response, next: NextFunction)
       expiresAt: add(Date.now(), { minutes: 10 }),
       code: crypto.createHash('sha256').update(randomBytes).digest('hex'),
       clientId: client.clientId,
-      scopes: scopes,
+      scopes: scopes?.map((scope) => scope.scope),
       redirectUrl,
       user: user._id as ObjectId,
       codeChallenge,
@@ -82,32 +70,80 @@ export const authorize = async (req: Request, res: Response, next: NextFunction)
     //redirect authorization code to callback address.
     res.redirect(`${redirectUrl}?${queryparams}`);
   } catch (error) {
-    return next(error);
+    if (error instanceof InvalidClientError) {
+      return res.render('error', { message: error.message, messageClass: 'alert-danger' });
+    } else {
+      return next(error);
+    }
   }
 };
 
-export const validateScopes = async (scope: unknown, redirectUrl: string): Promise<string[] | undefined> => {
+export const getAuthorize = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { client, redirectUrl, scopes } = await validateAuthorizeRequest(req);
+
+    return res.render(
+      'authorize',
+      generateInputObject(
+        req,
+        scopes?.map((scope) => scope.description),
+        client.clientName,
+        redirectUrl
+      )
+    );
+  } catch (error) {
+    if (error instanceof InvalidClientError) {
+      return res.render('error', { message: error.message, messageClass: 'alert-danger' });
+    } else {
+      return next(error);
+    }
+  }
+};
+
+const validateAuthorizeRequest = async (req: Request) => {
+  const client = await validateClient(req.query.client_id);
+
+  if (!client) {
+    throw new InvalidClientError('Invalid client identification');
+  }
+
+  //Redirect url is required
+  const redirectUrl = validateRedirectUrl(req.query.redirect_url, client);
+
+  if (!redirectUrl) {
+    //TODO: implement own error type
+    throw new InvalidClientError('Invalid or missing redirect url');
+  }
+  //Validate scopes. Is optional
+  const scopes: DocumentScope[] | undefined = await validateScopes(req.query.scope, redirectUrl);
+
+  return { client, redirectUrl, scopes };
+};
+
+const validateScopes = async (scope: unknown, redirectUrl: string): Promise<DocumentScope[] | undefined> => {
   const scopeString = parseToStringOrUndefined(scope);
   if (!scopeString) {
     return undefined;
   }
-  const scopes: string[] = scopeString.split(' ');
-
-  for (const scope of scopes) {
-    const validScope = await Scope.findOne({ scope: scope });
+  const scopes: DocumentScope[] = [];
+  for (const scope of scopeString.split(' ')) {
+    const validScope = await Scope.findOne({ scope });
 
     if (!validScope) {
       throw new InvalidScopeError(`Invalid scope: ${scope}`, redirectUrl);
     }
+    scopes.push(validScope);
   }
   return scopes;
 };
 
-export const validateClient = async (client_id: unknown): Promise<DocumentClient | undefined> => {
+const validateClient = async (client_id: unknown): Promise<DocumentClient | undefined> => {
   const clientId = parseToStringOrUndefined(client_id);
   if (!clientId) {
     return;
   }
+  console.log(clientId);
+
   const client = await Client.findOne({ clientId });
 
   if (!client) {
@@ -116,16 +152,24 @@ export const validateClient = async (client_id: unknown): Promise<DocumentClient
   return client;
 };
 
-export const validateRedirectUrl = (redirect_url: unknown, client: DocumentClient): string | undefined => {
+const validateRedirectUrl = (redirect_url: unknown, client: DocumentClient): string | undefined => {
   const redirectUrl = parseToStringOrUndefined(redirect_url);
 
-  if (redirectUrl) {
-    if (!client.redirectUrls.includes(redirectUrl)) {
-      return;
-    }
-    return redirectUrl;
+  if (!redirectUrl) {
+    return;
   }
-  return;
+
+  const validation = urlSchema.validate(redirectUrl);
+  if (validation.error) {
+    console.log(validation.error);
+    return;
+  }
+
+  if (!client.redirectUrls.includes(redirectUrl)) {
+    return;
+  }
+
+  return redirectUrl;
 };
 
 const validateCodeChallenge = (
@@ -152,7 +196,27 @@ const validateCodeChallenge = (
   return { codeChallenge, codeChallengeMethod };
 };
 
-export const generateQuerystring = (code: string, state: string | undefined): string => {
+const validateUser = async (data: { email: unknown; password: unknown }): Promise<DocumentUser | undefined> => {
+  const { email, password } = toUser(data);
+  const validate = emailSchema.validate(email);
+
+  if (validate.error) {
+    return;
+  }
+
+  const user: DocumentUser | null = await User.findOne({ email });
+  if (!user) {
+    return;
+  }
+
+  const comparePassword = await bcrypt.compare(password, user.password);
+  if (!comparePassword) {
+    return;
+  }
+  return user;
+};
+
+const generateQuerystring = (code: string, state: string | undefined): string => {
   if (state) {
     return querystring.stringify({ code, state });
   }
@@ -160,13 +224,20 @@ export const generateQuerystring = (code: string, state: string | undefined): st
   return querystring.stringify({ code });
 };
 
-export const generateInputObject = (req: Request, scopes: string[] | undefined, client: string, message?: string) => {
+const generateInputObject = (
+  req: Request,
+  scopes: string[] | undefined,
+  client: string,
+  redirectUrl: string,
+  message?: string
+) => {
   const returnTo = querystring.stringify({ return_to: req.originalUrl });
-  const accessDenied = querystring.stringify({ error: 'access_denied' });
+  const accessDenied = `${redirectUrl}?${querystring.stringify({ error: 'access_denied' })}`;
 
   return { message, messageClass: 'alert-danger', scopes, returnTo, accessDenied, client };
 };
 
 export default {
-  authorize
+  postAuthorize,
+  getAuthorize
 };

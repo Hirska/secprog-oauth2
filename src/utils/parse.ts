@@ -6,9 +6,11 @@ import {
   UserRole,
   TokenRequest,
   GrantType,
-  CodeChallengeMethod
+  CodeChallengeMethod,
+  INewUser
 } from '../types';
 type UserFields = { email: unknown; password: unknown };
+type NewUserFields = { email: unknown; password: unknown; confirmPassword: unknown };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const toTokenRequest = (tokenRequest: any): TokenRequest => {
   const request: TokenRequest = {
@@ -30,10 +32,21 @@ export const toTokenRequest = (tokenRequest: any): TokenRequest => {
 
   return request;
 };
+
 export const toUser = ({ email, password }: UserFields): IUser => {
   const user: IUser = {
     email: parseToString(email, 'email'),
     password: parseToString(password, 'password'),
+    role: UserRole.user
+  };
+  return user;
+};
+
+export const toNewUser = ({ email, password, confirmPassword }: NewUserFields): INewUser => {
+  const user: INewUser = {
+    email: parseToString(email, 'email'),
+    password: parseToString(password, 'password'),
+    confirmPassword: parseToString(confirmPassword, 'Confirm password'),
     role: UserRole.user
   };
   return user;

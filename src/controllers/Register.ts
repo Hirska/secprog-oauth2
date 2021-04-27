@@ -1,12 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
 import User from '../models/user';
-import { parseToStringOrUndefined, toUser } from '../utils/parse';
+import { parseToStringOrUndefined, toNewUser } from '../utils/parse';
+import { emailSchema } from '../utils/validate';
 
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { email, password, role } = toUser(req.body);
+    const { email, password, role, confirmPassword } = toNewUser(req.body);
 
-    if (password !== req.body.confirmPassword) {
+    const validate = emailSchema.validate(email);
+
+    if (validate.error) {
+      return res.render('register', { message: 'Invalid email', messageClass: 'alert-danger' });
+    }
+
+    if (password !== confirmPassword) {
       return res.render('register', { message: 'Passwords does not match', messageClass: 'alert-danger' });
     }
 

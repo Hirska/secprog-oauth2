@@ -17,11 +17,8 @@ const errorHandler = (err: Error, _req: Request, res: Response, _next: NextFunct
     }
     return res.status(err.code).json({ error: err.name, error_description: err.message });
   }
-  if (err instanceof TokenExpiredError) {
-    return res.status(403).send('Forbidden');
-  }
-  if (err instanceof JsonWebTokenError) {
-    return res.status(403).send('Forbidden');
+  if (err instanceof TokenExpiredError || err instanceof JsonWebTokenError) {
+    return res.status(401).send('Unauthorized');
   }
 
   return res.status(500).send({ message });

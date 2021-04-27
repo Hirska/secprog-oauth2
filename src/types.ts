@@ -31,6 +31,10 @@ export interface IUser {
   role: UserRole;
 }
 
+export interface INewUser extends IUser {
+  confirmPassword: string;
+}
+
 export interface IScope {
   scope: string;
   description: string;
@@ -75,5 +79,5 @@ export interface DocumentScope extends IScope, Document {}
 export interface DocumentCode extends ICode, Document {}
 
 export interface AuthenticatedRequest extends Request {
-  user?: string;
+  user?: DocumentUser;
 }
