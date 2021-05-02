@@ -1,5 +1,7 @@
 import { Document, ObjectId } from 'mongoose';
 import { Request } from 'express';
+import * as z from 'zod';
+import { newUserSchema, userSchema } from './utils/parse';
 export interface JWTData {
   userId: string;
   scopes: string[];
@@ -25,14 +27,12 @@ export interface IClient {
   grants?: string[];
 }
 
-export interface IUser {
-  email: string;
-  password: string;
+export interface IUser extends z.infer<typeof userSchema> {
   role: UserRole;
 }
 
-export interface INewUser extends IUser {
-  confirmPassword: string;
+export interface INewUser extends z.infer<typeof newUserSchema> {
+  role: UserRole;
 }
 
 export interface IScope {

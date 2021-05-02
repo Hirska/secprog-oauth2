@@ -5,7 +5,7 @@ import Client from '../models/client';
 import Scope from '../models/scope';
 import Code from '../models/code';
 import { DocumentUser, DocumentClient, DocumentScope } from '../types';
-import { parseToStringOrUndefined, toUser, parseResponseType, parseCodeChallengeMethod } from '../utils/parse';
+import { parseToStringOrUndefined, parseResponseType, parseCodeChallengeMethod, userSchema } from '../utils/parse';
 import InvalidScopeError from '../errors/InvalidScopeError';
 import { add } from 'date-fns';
 
@@ -13,20 +13,21 @@ import querystring from 'querystring';
 import crypto from 'crypto';
 import { ObjectId } from 'mongoose';
 import InvalidRequestError from '../errors/InvalidRequestError';
-import { emailSchema, urlSchema } from '../utils/validate';
+import { urlSchema } from '../utils/validate';
 import InvalidClientError from '../errors/InvalidClientError';
 import { randomBytesAsync } from '../utils/utils';
 
 export const postAuthorize = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { client, redirectUrl, scopes } = await validateAuthorizeRequest(req);
+    //Set redirect uri to be used in error handler
+    req.redirectUri = redirectUrl;
 
     //Code challenge for public clients
     const { codeChallenge, codeChallengeMethod } = validateCodeChallenge(
       req.query.code_challenge,
       req.query.code_challenge_method,
-      client,
-      redirectUrl
+      client
     );
 
     //Redirect user back to redirect url if invalid response_type
@@ -70,9 +71,8 @@ export const postAuthorize = async (req: Request, res: Response, next: NextFunct
   } catch (error) {
     if (error instanceof InvalidClientError) {
       return res.render('error', { message: error.message, messageClass: 'alert-danger' });
-    } else {
-      return next(error);
     }
+    return next(error);
   }
 };
 
@@ -92,9 +92,8 @@ export const getAuthorize = async (req: Request, res: Response, next: NextFuncti
   } catch (error) {
     if (error instanceof InvalidClientError) {
       return res.render('error', { message: error.message, messageClass: 'alert-danger' });
-    } else {
-      return next(error);
     }
+    return next(error);
   }
 };
 
@@ -151,7 +150,6 @@ const validateClient = async (client_id: unknown): Promise<DocumentClient | unde
 
 const validateRedirectUrl = (redirect_url: unknown, client: DocumentClient): string | undefined => {
   const redirectUrl = parseToStringOrUndefined(redirect_url);
-  console.log(redirectUrl);
   if (!redirectUrl) {
     return;
   }
@@ -162,7 +160,6 @@ const validateRedirectUrl = (redirect_url: unknown, client: DocumentClient): str
     console.log(validation.error);
     return;
   }
-  console.log(client.redirectUrls);
   if (!client.redirectUrls.includes(redirectUrl)) {
     return;
   }
@@ -170,12 +167,7 @@ const validateRedirectUrl = (redirect_url: unknown, client: DocumentClient): str
   return redirectUrl;
 };
 
-const validateCodeChallenge = (
-  code_challenge: unknown,
-  code_challenge_method: unknown,
-  client: DocumentClient,
-  redirect_url: string
-) => {
+const validateCodeChallenge = (code_challenge: unknown, code_challenge_method: unknown, client: DocumentClient) => {
   if (client.isConfidential) {
     return { codeChallenge: undefined, codeChallengeMethod: undefined };
   }
@@ -184,23 +176,19 @@ const validateCodeChallenge = (
   const codeChallengeMethod = parseCodeChallengeMethod(code_challenge_method);
 
   if (!codeChallenge) {
-    throw new InvalidRequestError('Code challenge missing', redirect_url);
+    throw new InvalidRequestError('Code challenge missing');
   }
 
   if (!codeChallengeMethod) {
-    throw new InvalidRequestError('Code challenge method missing', redirect_url);
+    throw new InvalidRequestError('Code challenge method missing');
   }
 
   return { codeChallenge, codeChallengeMethod };
 };
 
 const validateUser = async (data: { email: unknown; password: unknown }): Promise<DocumentUser | undefined> => {
-  const { email, password } = toUser(data);
-  const validate = emailSchema.validate(email);
-
-  if (validate.error) {
-    return;
-  }
+  //TODO: handle parse-errors
+  const { email, password } = userSchema.parse(data);
 
   const user: DocumentUser | null = await User.findOne({ email });
   if (!user) {

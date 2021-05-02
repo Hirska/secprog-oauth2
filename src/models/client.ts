@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
-import { DocumentClient, IClient } from '../types';
+import { DocumentClient } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 mongoose.set('useFindAndModify', false);
 
@@ -10,12 +10,7 @@ const clientSchema = new mongoose.Schema({
   clientId: { type: String, default: uuidv4() },
   clientName: { type: String },
   isConfidential: { type: Boolean, required: true },
-  clientSecret: {
-    type: String,
-    required: function (this: IClient) {
-      this.isConfidential === true;
-    }
-  },
+  clientSecret: { type: String },
   grants: { type: Array }
 });
 

@@ -1,16 +1,6 @@
 import InvalidRequestError from '../errors/InvalidRequestError';
-import {
-  IUser,
-  AuthorizationRequest,
-  ResponseType,
-  UserRole,
-  TokenRequest,
-  GrantType,
-  CodeChallengeMethod,
-  INewUser
-} from '../types';
-type UserFields = { email: unknown; password: unknown };
-type NewUserFields = { email: unknown; password: unknown; confirmPassword: unknown };
+import { ResponseType, TokenRequest, GrantType, CodeChallengeMethod } from '../types';
+import * as z from 'zod';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const toTokenRequest = (tokenRequest: any): TokenRequest => {
   const request: TokenRequest = {
@@ -33,44 +23,21 @@ export const toTokenRequest = (tokenRequest: any): TokenRequest => {
   return request;
 };
 
-export const toUser = ({ email, password }: UserFields): IUser => {
-  const user: IUser = {
-    email: parseToString(email, 'email'),
-    password: parseToString(password, 'password'),
-    role: UserRole.user
-  };
-  return user;
-};
+export const userSchema = z.object({
+  email: z.string().email(),
+  password: z.string()
+});
 
-export const toNewUser = ({ email, password, confirmPassword }: NewUserFields): INewUser => {
-  const user: INewUser = {
-    email: parseToString(email, 'email'),
-    password: parseToString(password, 'password'),
-    confirmPassword: parseToString(confirmPassword, 'Confirm password'),
-    role: UserRole.user
-  };
-  return user;
-};
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const toAuthorizationRequest = (authorizationRequest: any): AuthorizationRequest => {
-  const authorization: AuthorizationRequest = {
-    response_type: parseResponseType(authorizationRequest.response_type),
-    client_id: parseToString(authorizationRequest.client_id, 'client_id')
-  };
-
-  if (authorizationRequest.redirect_url) {
-    authorization.redirect_url = parseToString(authorizationRequest.redirect_url, 'redirect_url');
-  }
-  if (authorizationRequest.scope) {
-    authorization.scope = parseToString(authorizationRequest.scope, 'scope');
-  }
-  if (authorizationRequest.state) {
-    authorization.state = parseToString(authorizationRequest.state, 'state');
-  }
-
-  return authorization;
-};
+export const newUserSchema = z
+  .object({
+    email: z.string().email(),
+    password: z.string(),
+    confirmPassword: z.string()
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirm']
+  });
 
 export const parseToString = (param: unknown, paramName: string): string => {
   if (!param || !isString(param)) {
@@ -130,14 +97,7 @@ const isCodeChallengeMethod = (param: any): param is CodeChallengeMethod => {
   return Object.values(CodeChallengeMethod).includes(param);
 };
 
-/**
- * Helper function for exhaustive type checking
- */
-export const assertNever = (value: never): never => {
-  throw new Error(`Unhandled discriminated union member: ${JSON.stringify(value)}`);
-};
-
 export default {
-  toUser,
-  toAuthorizationRequest
+  userSchema,
+  newUserSchema
 };

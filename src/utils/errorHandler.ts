@@ -3,7 +3,7 @@ import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
 import querystring from 'querystring';
 import GeneralError from '../errors/GeneralError';
 import RedirectError from '../errors/RedirectError';
-const errorHandler = (err: Error, _req: Request, res: Response, _next: NextFunction) => {
+const errorHandler = (err: Error, req: Request, res: Response, _next: NextFunction) => {
   const message = err.message || 'Something went wrong!';
 
   if (err instanceof GeneralError) {
@@ -11,9 +11,9 @@ const errorHandler = (err: Error, _req: Request, res: Response, _next: NextFunct
   }
 
   if (err instanceof RedirectError) {
-    if (err.redirectUrl) {
+    if (req.redirectUri) {
       const errorString = querystring.stringify({ error: err.name, error_message: err.message });
-      return res.redirect(`${err.redirectUrl}?${errorString}`);
+      return res.redirect(`${req.redirectUri}?${errorString}`);
     }
     return res.status(err.code).json({ error: err.name, error_description: err.message });
   }

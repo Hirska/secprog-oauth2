@@ -1,26 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
+import { ZodError } from 'zod';
 import User from '../models/user';
-import { parseToStringOrUndefined, toNewUser } from '../utils/parse';
-import { emailSchema } from '../utils/validate';
+import { UserRole } from '../types';
+import { newUserSchema, parseToStringOrUndefined } from '../utils/parse';
 
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { email, password, role, confirmPassword } = toNewUser(req.body);
-
-    const validate = emailSchema.validate(email);
-
-    if (validate.error) {
-      return res.render('register', { message: 'Invalid email', messageClass: 'alert-danger' });
-    }
-
-    if (password !== confirmPassword) {
-      return res.render('register', { message: 'Passwords does not match', messageClass: 'alert-danger' });
-    }
+    const { email, password } = newUserSchema.parse(req.body);
 
     const newUser = new User({
       email,
       password,
-      role
+      role: UserRole.user
     });
 
     await newUser.save();
@@ -29,8 +20,16 @@ export const register = async (req: Request, res: Response, next: NextFunction):
     if (returnTo) {
       return res.redirect(returnTo);
     }
+
     return res.render('register', { message: `New user successfully created`, messageClass: 'alert-success' });
   } catch (error) {
+    if (error instanceof ZodError) {
+      if (error.errors.length > 0) {
+        const message = error.errors[0].message;
+        return res.render('register', { message, messageClass: 'alert-danger' });
+      }
+      return res.render('register', { message: 'Try again', messageClass: 'alert-danger' });
+    }
     if (error.code === 11000) {
       return res.render('register', {
         message: `Username with that email already exists`,
