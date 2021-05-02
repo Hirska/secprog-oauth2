@@ -11,13 +11,11 @@ import { add } from 'date-fns';
 
 import querystring from 'querystring';
 import crypto from 'crypto';
-import { promisify } from 'util';
 import { ObjectId } from 'mongoose';
 import InvalidRequestError from '../errors/InvalidRequestError';
 import { emailSchema, urlSchema } from '../utils/validate';
 import InvalidClientError from '../errors/InvalidClientError';
-
-const randomBytesAsync = promisify(crypto.randomBytes);
+import { randomBytesAsync } from '../utils/utils';
 
 export const postAuthorize = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -108,8 +106,8 @@ const validateAuthorizeRequest = async (req: Request) => {
   }
 
   //Redirect url is required
-  const redirectUrl = validateRedirectUrl(req.query.redirect_url, client);
-
+  //TODO: Change redirectUrls to redirectUris
+  const redirectUrl = validateRedirectUrl(req.query.redirect_uri, client);
   if (!redirectUrl) {
     //TODO: implement own error type
     throw new InvalidClientError('Invalid or missing redirect url');
@@ -142,7 +140,6 @@ const validateClient = async (client_id: unknown): Promise<DocumentClient | unde
   if (!clientId) {
     return;
   }
-  console.log(clientId);
 
   const client = await Client.findOne({ clientId });
 
@@ -154,17 +151,18 @@ const validateClient = async (client_id: unknown): Promise<DocumentClient | unde
 
 const validateRedirectUrl = (redirect_url: unknown, client: DocumentClient): string | undefined => {
   const redirectUrl = parseToStringOrUndefined(redirect_url);
-
+  console.log(redirectUrl);
   if (!redirectUrl) {
     return;
   }
 
   const validation = urlSchema.validate(redirectUrl);
+
   if (validation.error) {
     console.log(validation.error);
     return;
   }
-
+  console.log(client.redirectUrls);
   if (!client.redirectUrls.includes(redirectUrl)) {
     return;
   }

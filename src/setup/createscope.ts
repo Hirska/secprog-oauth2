@@ -8,8 +8,6 @@ export default async (scopeConfig: IScope) => {
     return 'Scope not created: at least one scope already found in database.';
   }
 
-  // FIXME: Fails when a non-admin user with same email already exists in the database
-
   const newScope = new Scope(scopeConfig);
   await newScope.save();
   return 'Scope successfully created';

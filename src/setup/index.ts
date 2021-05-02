@@ -13,13 +13,7 @@ export default async () => {
     })
   );
 
-  console.log(
-    await createclient({
-      redirectUrls: [settings.CLIENT_REDIRECT_URL],
-      clientName: 'TestApp',
-      isConfidential: false
-    })
-  );
+  console.log(await createclient());
 
   console.log(await createscope({ scope: 'profile', description: 'This gives access to your profile information' }));
 };
