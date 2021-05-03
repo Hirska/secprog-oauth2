@@ -1,6 +1,7 @@
 import InvalidRequestError from '../errors/InvalidRequestError';
 import { ResponseType, TokenRequest, GrantType, CodeChallengeMethod } from '../types';
 import * as z from 'zod';
+import isURL from 'validator/lib/isURL';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const toTokenRequest = (tokenRequest: any): TokenRequest => {
   const request: TokenRequest = {
@@ -38,6 +39,20 @@ export const newUserSchema = z
     message: "Passwords don't match",
     path: ['confirm']
   });
+
+export const stringSchema = z.string();
+export const uriSchema = z.string().refine(
+  (val) => {
+    return isURL(val, {
+      protocols: ['http', 'https'],
+      require_protocol: true,
+      /*TODO: Set require tld to false when localhost is no longer needed*/ require_tld: false
+    });
+  },
+  {
+    message: 'Invalid email'
+  }
+);
 
 export const parseToString = (param: unknown, paramName: string): string => {
   if (!param || !isString(param)) {

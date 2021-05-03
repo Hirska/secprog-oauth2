@@ -5,7 +5,14 @@ import Client from '../models/client';
 import Scope from '../models/scope';
 import Code from '../models/code';
 import { DocumentUser, DocumentClient, DocumentScope } from '../types';
-import { parseToStringOrUndefined, parseResponseType, parseCodeChallengeMethod, userSchema } from '../utils/parse';
+import {
+  parseToStringOrUndefined,
+  parseResponseType,
+  parseCodeChallengeMethod,
+  userSchema,
+  stringSchema,
+  uriSchema
+} from '../utils/parse';
 import InvalidScopeError from '../errors/InvalidScopeError';
 import { add } from 'date-fns';
 
@@ -13,16 +20,17 @@ import querystring from 'querystring';
 import crypto from 'crypto';
 import { ObjectId } from 'mongoose';
 import InvalidRequestError from '../errors/InvalidRequestError';
-import { urlSchema } from '../utils/validate';
 import InvalidClientError from '../errors/InvalidClientError';
 import { randomBytesAsync } from '../utils/utils';
+import { ZodError } from 'zod';
 
 export const postAuthorize = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { client, redirectUrl, scopes } = await validateAuthorizeRequest(req);
-    //Set redirect uri to be used in error handler
+    const { client, redirectUrl } = await validateAuthorizeRequest(req);
+    //Set redirect uri to be used in redirect errors
     req.redirectUri = redirectUrl;
 
+    const scopes: DocumentScope[] | undefined = await validateScopes(req.query.scope);
     //Code challenge for public clients
     const { codeChallenge, codeChallengeMethod } = validateCodeChallenge(
       req.query.code_challenge,
@@ -69,6 +77,10 @@ export const postAuthorize = async (req: Request, res: Response, next: NextFunct
     //redirect authorization code to callback address.
     res.redirect(`${redirectUrl}?${queryparams}`);
   } catch (error) {
+    if (error instanceof ZodError) {
+      console.log(error);
+      return;
+    }
     if (error instanceof InvalidClientError) {
       return res.render('error', { message: error.message, messageClass: 'alert-danger' });
     }
@@ -78,8 +90,11 @@ export const postAuthorize = async (req: Request, res: Response, next: NextFunct
 
 export const getAuthorize = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { client, redirectUrl, scopes } = await validateAuthorizeRequest(req);
+    const { client, redirectUrl } = await validateAuthorizeRequest(req);
+    //Set redirect uri to be used in redirect errors
+    req.redirectUri = redirectUrl;
 
+    const scopes: DocumentScope[] | undefined = await validateScopes(req.query.scope);
     return res.render(
       'authorize',
       generateInputObject(
@@ -100,70 +115,35 @@ export const getAuthorize = async (req: Request, res: Response, next: NextFuncti
 const validateAuthorizeRequest = async (req: Request) => {
   const client = await validateClient(req.query.client_id);
 
-  if (!client) {
-    throw new InvalidClientError('Invalid client identification');
-  }
-
   //Redirect url is required
   //TODO: Change redirectUrls to redirectUris
   const redirectUrl = validateRedirectUrl(req.query.redirect_uri, client);
-  if (!redirectUrl) {
-    //TODO: implement own error type
-    throw new InvalidClientError('Invalid or missing redirect url');
-  }
-  //Validate scopes. Is optional
-  const scopes: DocumentScope[] | undefined = await validateScopes(req.query.scope, redirectUrl);
 
-  return { client, redirectUrl, scopes };
+  return { client, redirectUrl };
 };
 
-const validateScopes = async (scope: unknown, redirectUrl: string): Promise<DocumentScope[] | undefined> => {
-  const scopeString = parseToStringOrUndefined(scope);
-  if (!scopeString) {
-    return undefined;
-  }
+const validateScopes = async (scope: unknown): Promise<DocumentScope[] | undefined> => {
+  const scopeString = stringSchema.parse(scope);
   const scopes: DocumentScope[] = [];
   for (const scope of scopeString.split(' ')) {
-    const validScope = await Scope.findOne({ scope });
-
-    if (!validScope) {
-      throw new InvalidScopeError(`Invalid scope: ${scope}`, redirectUrl);
-    }
+    const validScope = await Scope.findOne({ scope }).orFail(new InvalidScopeError(`Invalid scope: ${scope}`));
     scopes.push(validScope);
   }
   return scopes;
 };
 
-const validateClient = async (client_id: unknown): Promise<DocumentClient | undefined> => {
-  const clientId = parseToStringOrUndefined(client_id);
-  if (!clientId) {
-    return;
-  }
-
-  const client = await Client.findOne({ clientId });
-
-  if (!client) {
-    return;
-  }
+const validateClient = async (client_id: unknown): Promise<DocumentClient> => {
+  //TODO: add specific parse for uuid
+  const clientId = stringSchema.parse(client_id);
+  const client = await Client.findOne({ clientId }).orFail(new InvalidClientError('No client with given id'));
   return client;
 };
 
-const validateRedirectUrl = (redirect_url: unknown, client: DocumentClient): string | undefined => {
-  const redirectUrl = parseToStringOrUndefined(redirect_url);
-  if (!redirectUrl) {
-    return;
-  }
-
-  const validation = urlSchema.validate(redirectUrl);
-
-  if (validation.error) {
-    console.log(validation.error);
-    return;
-  }
+const validateRedirectUrl = (redirect_url: unknown, client: DocumentClient): string => {
+  const redirectUrl = uriSchema.parse(redirect_url);
   if (!client.redirectUrls.includes(redirectUrl)) {
-    return;
+    throw new InvalidClientError('Invalid or missing redirect url');
   }
-
   return redirectUrl;
 };
 
