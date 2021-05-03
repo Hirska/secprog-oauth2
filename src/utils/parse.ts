@@ -40,6 +40,11 @@ export const newUserSchema = z
     path: ['confirm']
   });
 
+export const codeChallengeSchema = z.object({
+  codeChallenge: z.string(),
+  codeChallengeMethod: z.nativeEnum(CodeChallengeMethod).optional()
+});
+
 export const stringSchema = z.string();
 export const uriSchema = z.string().refine(
   (val) => {

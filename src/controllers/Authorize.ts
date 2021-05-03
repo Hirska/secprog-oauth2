@@ -8,10 +8,10 @@ import { DocumentUser, DocumentClient, DocumentScope } from '../types';
 import {
   parseToStringOrUndefined,
   parseResponseType,
-  parseCodeChallengeMethod,
   userSchema,
   stringSchema,
-  uriSchema
+  uriSchema,
+  codeChallengeSchema
 } from '../utils/parse';
 import InvalidScopeError from '../errors/InvalidScopeError';
 import { add } from 'date-fns';
@@ -22,7 +22,6 @@ import { ObjectId } from 'mongoose';
 import InvalidRequestError from '../errors/InvalidRequestError';
 import InvalidClientError from '../errors/InvalidClientError';
 import { randomBytesAsync } from '../utils/utils';
-import { ZodError } from 'zod';
 
 export const postAuthorize = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -77,10 +76,6 @@ export const postAuthorize = async (req: Request, res: Response, next: NextFunct
     //redirect authorization code to callback address.
     res.redirect(`${redirectUrl}?${queryparams}`);
   } catch (error) {
-    if (error instanceof ZodError) {
-      console.log(error);
-      return;
-    }
     if (error instanceof InvalidClientError) {
       return res.render('error', { message: error.message, messageClass: 'alert-danger' });
     }
@@ -123,9 +118,12 @@ const validateAuthorizeRequest = async (req: Request) => {
 };
 
 const validateScopes = async (scope: unknown): Promise<DocumentScope[] | undefined> => {
-  const scopeString = stringSchema.parse(scope);
+  const result = stringSchema.safeParse(scope);
+  if (!result.success) {
+    throw new InvalidScopeError(`Invalid scopes`);
+  }
   const scopes: DocumentScope[] = [];
-  for (const scope of scopeString.split(' ')) {
+  for (const scope of result.data.split(' ')) {
     const validScope = await Scope.findOne({ scope }).orFail(new InvalidScopeError(`Invalid scope: ${scope}`));
     scopes.push(validScope);
   }
@@ -134,36 +132,34 @@ const validateScopes = async (scope: unknown): Promise<DocumentScope[] | undefin
 
 const validateClient = async (client_id: unknown): Promise<DocumentClient> => {
   //TODO: add specific parse for uuid
-  const clientId = stringSchema.parse(client_id);
-  const client = await Client.findOne({ clientId }).orFail(new InvalidClientError('No client with given id'));
+  const result = stringSchema.safeParse(client_id);
+  if (!result.success) {
+    throw new InvalidClientError('Invalid or missing client');
+  }
+  const client = await Client.findOne({ clientId: result.data }).orFail(
+    new InvalidClientError('No client with given id')
+  );
   return client;
 };
 
 const validateRedirectUrl = (redirect_url: unknown, client: DocumentClient): string => {
-  const redirectUrl = uriSchema.parse(redirect_url);
-  if (!client.redirectUrls.includes(redirectUrl)) {
+  const result = uriSchema.safeParse(redirect_url);
+  if (!result.success || !client.redirectUrls.includes(result.data)) {
     throw new InvalidClientError('Invalid or missing redirect url');
   }
-  return redirectUrl;
+  return result.data;
 };
 
-const validateCodeChallenge = (code_challenge: unknown, code_challenge_method: unknown, client: DocumentClient) => {
+const validateCodeChallenge = (codeChallenge: unknown, codeChallengeMethod: unknown, client: DocumentClient) => {
   if (client.isConfidential) {
     return { codeChallenge: undefined, codeChallengeMethod: undefined };
   }
-
-  const codeChallenge = parseToStringOrUndefined(code_challenge);
-  const codeChallengeMethod = parseCodeChallengeMethod(code_challenge_method);
-
-  if (!codeChallenge) {
-    throw new InvalidRequestError('Code challenge missing');
+  const result = codeChallengeSchema.safeParse({ codeChallenge, codeChallengeMethod });
+  if (!result.success) {
+    throw new InvalidRequestError('Invalid or missing code challenge / code challenge method');
   }
 
-  if (!codeChallengeMethod) {
-    throw new InvalidRequestError('Code challenge method missing');
-  }
-
-  return { codeChallenge, codeChallengeMethod };
+  return result.data;
 };
 
 const validateUser = async (data: { email: unknown; password: unknown }): Promise<DocumentUser | undefined> => {
