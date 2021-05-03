@@ -11,7 +11,8 @@ import {
   userSchema,
   stringSchema,
   uriSchema,
-  codeChallengeSchema
+  codeChallengeSchema,
+  optStringSchema
 } from '../utils/parse';
 import InvalidScopeError from '../errors/InvalidScopeError';
 import { add } from 'date-fns';
@@ -22,6 +23,7 @@ import { ObjectId } from 'mongoose';
 import InvalidRequestError from '../errors/InvalidRequestError';
 import InvalidClientError from '../errors/InvalidClientError';
 import { randomBytesAsync } from '../utils/utils';
+import { ZodError } from 'zod';
 
 export const postAuthorize = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -30,6 +32,7 @@ export const postAuthorize = async (req: Request, res: Response, next: NextFunct
     req.redirectUri = redirectUrl;
 
     const scopes: DocumentScope[] | undefined = await validateScopes(req.query.scope);
+
     //Code challenge for public clients
     const { codeChallenge, codeChallengeMethod } = validateCodeChallenge(
       req.query.code_challenge,
@@ -40,6 +43,7 @@ export const postAuthorize = async (req: Request, res: Response, next: NextFunct
     //Redirect user back to redirect url if invalid response_type
     parseResponseType(req.query.response_type);
 
+    // Returns DocumentUser or undefined
     const user = await validateUser(req.body);
 
     if (!user) {
@@ -57,7 +61,7 @@ export const postAuthorize = async (req: Request, res: Response, next: NextFunct
 
     const randomBytes = await randomBytesAsync(48);
 
-    const state = parseToStringOrUndefined(req.query.state);
+    const state = optStringSchema.parse(req.query.state);
     //Generate new authorization code.
     const code = new Code({
       expiresAt: add(Date.now(), { minutes: 10 }),
@@ -76,6 +80,9 @@ export const postAuthorize = async (req: Request, res: Response, next: NextFunct
     //redirect authorization code to callback address.
     res.redirect(`${redirectUrl}?${queryparams}`);
   } catch (error) {
+    if (error instanceof ZodError) {
+      return next(new InvalidRequestError('Invalid request parameters'));
+    }
     if (error instanceof InvalidClientError) {
       return res.render('error', { message: error.message, messageClass: 'alert-danger' });
     }
@@ -163,14 +170,18 @@ const validateCodeChallenge = (codeChallenge: unknown, codeChallengeMethod: unkn
 };
 
 const validateUser = async (data: { email: unknown; password: unknown }): Promise<DocumentUser | undefined> => {
-  //TODO: handle parse-errors
-  const { email, password } = userSchema.parse(data);
+  const result = userSchema.safeParse(data);
 
-  const user: DocumentUser | null = await User.findOne({ email });
-  if (!user) {
+  if (!result.success) {
     return;
   }
 
+  const { email, password } = result.data;
+  const user: DocumentUser | null = await User.findOne({ email });
+
+  if (!user) {
+    return;
+  }
   const comparePassword = await bcrypt.compare(password, user.password);
   if (!comparePassword) {
     return;

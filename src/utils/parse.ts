@@ -46,6 +46,7 @@ export const codeChallengeSchema = z.object({
 });
 
 export const stringSchema = z.string();
+export const optStringSchema = z.string().optional();
 export const uriSchema = z.string().refine(
   (val) => {
     return isURL(val, {
