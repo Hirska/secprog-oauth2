@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import User from '../models/user';
 import { UserRole } from '../types';
-import { newUserSchema, parseToStringOrUndefined } from '../utils/parse';
+import { newUserSchema, optStringSchema } from '../utils/parse';
 
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -16,7 +16,7 @@ export const register = async (req: Request, res: Response, next: NextFunction):
 
     await newUser.save();
 
-    const returnTo = parseToStringOrUndefined(req.query.return_to);
+    const returnTo = optStringSchema.parse(req.query.return_to);
     if (returnTo) {
       return res.redirect(returnTo);
     }

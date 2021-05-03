@@ -1,29 +1,33 @@
 import bcrypt from 'bcrypt';
 import { Request, Response, NextFunction } from 'express';
+import querystring from 'querystring';
+import crypto from 'crypto';
+import { ObjectId } from 'mongoose';
+import { add } from 'date-fns';
+import { ZodError } from 'zod';
+
 import User from '../models/user';
 import Client from '../models/client';
 import Scope from '../models/scope';
 import Code from '../models/code';
-import { DocumentUser, DocumentClient, DocumentScope } from '../types';
+
+import { DocumentUser, DocumentClient, DocumentScope, CodeChallengeMethod } from '../types';
+
 import {
-  parseToStringOrUndefined,
-  parseResponseType,
   userSchema,
   stringSchema,
   uriSchema,
   codeChallengeSchema,
-  optStringSchema
+  optStringSchema,
+  uuidSchema,
+  responseTypeSchema
 } from '../utils/parse';
-import InvalidScopeError from '../errors/InvalidScopeError';
-import { add } from 'date-fns';
 
-import querystring from 'querystring';
-import crypto from 'crypto';
-import { ObjectId } from 'mongoose';
+import InvalidScopeError from '../errors/InvalidScopeError';
 import InvalidRequestError from '../errors/InvalidRequestError';
 import InvalidClientError from '../errors/InvalidClientError';
+
 import { randomBytesAsync } from '../utils/utils';
-import { ZodError } from 'zod';
 
 export const postAuthorize = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -41,7 +45,7 @@ export const postAuthorize = async (req: Request, res: Response, next: NextFunct
     );
 
     //Redirect user back to redirect url if invalid response_type
-    parseResponseType(req.query.response_type);
+    responseTypeSchema.parse(req.query.response_type);
 
     // Returns DocumentUser or undefined
     const user = await validateUser(req.body);
@@ -81,7 +85,7 @@ export const postAuthorize = async (req: Request, res: Response, next: NextFunct
     res.redirect(`${redirectUrl}?${queryparams}`);
   } catch (error) {
     if (error instanceof ZodError) {
-      return next(new InvalidRequestError('Invalid request parameters'));
+      return next(new InvalidRequestError('Invalid request'));
     }
     if (error instanceof InvalidClientError) {
       return res.render('error', { message: error.message, messageClass: 'alert-danger' });
@@ -139,7 +143,7 @@ const validateScopes = async (scope: unknown): Promise<DocumentScope[] | undefin
 
 const validateClient = async (client_id: unknown): Promise<DocumentClient> => {
   //TODO: add specific parse for uuid
-  const result = stringSchema.safeParse(client_id);
+  const result = uuidSchema.safeParse(client_id);
   if (!result.success) {
     throw new InvalidClientError('Invalid or missing client');
   }
@@ -166,7 +170,10 @@ const validateCodeChallenge = (codeChallenge: unknown, codeChallengeMethod: unkn
     throw new InvalidRequestError('Invalid or missing code challenge / code challenge method');
   }
 
-  return result.data;
+  return {
+    codeChallenge: result.data.codeChallenge,
+    codeChallengeMethod: result.data.codeChallengeMethod || CodeChallengeMethod.plain
+  };
 };
 
 const validateUser = async (data: { email: unknown; password: unknown }): Promise<DocumentUser | undefined> => {

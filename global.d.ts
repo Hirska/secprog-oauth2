@@ -1,5 +1,10 @@
-declare namespace Express {
-  export interface Request {
-    redirectUri?: string;
+import { DocumentUser } from './src/types';
+
+declare global {
+  namespace Express {
+    interface Request {
+      redirectUri?: string;
+      user?: DocumentUser;
+    }
   }
 }

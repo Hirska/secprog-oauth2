@@ -1,7 +1,7 @@
 import { Document, ObjectId } from 'mongoose';
 import { Request } from 'express';
-import { infer } from 'zod';
-import { newUserSchema, userSchema } from './utils/parse';
+import * as z from 'zod';
+import { newUserSchema, tokenRequestSchema, userSchema } from './utils/parse';
 export interface JWTData {
   userId: string;
   scopes: string[];
@@ -27,11 +27,11 @@ export interface IClient {
   grants?: string[];
 }
 
-export interface IUser extends infer<typeof userSchema> {
+export interface IUser extends z.infer<typeof userSchema> {
   role: UserRole;
 }
 
-export interface INewUser extends infer<typeof newUserSchema> {
+export interface INewUser extends z.infer<typeof newUserSchema> {
   role: UserRole;
 }
 
@@ -46,7 +46,7 @@ export interface AuthorizationRequest {
   scope?: string;
   state?: string;
 }
-
+/*
 export interface TokenRequest {
   grant_type: GrantType;
   code: string;
@@ -55,6 +55,8 @@ export interface TokenRequest {
   client_secret?: string;
   code_verifier?: string;
 }
+*/
+export type TokenRequest = z.infer<typeof tokenRequestSchema>;
 
 export enum GrantType {
   code = 'authorization_code'
@@ -70,7 +72,7 @@ export enum UserRole {
 }
 
 export enum CodeChallengeMethod {
-  S256 = 'S256',
+  S256 = 's256',
   plain = 'plain'
 }
 export interface DocumentClient extends IClient, Document {}

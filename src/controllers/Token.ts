@@ -3,20 +3,25 @@ import auth from 'basic-auth';
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { toTokenRequest } from '../utils/parse';
 import Client from '../models/client';
 import { CodeChallengeMethod, TokenRequest, DocumentCode } from '../types';
 import Code from '../models/code';
 import InvalidGrantError from '../errors/InvalidGrantError';
 import InvalidClientError from '../errors/InvalidClientError';
 import settings from '../utils/settings';
+import { tokenRequestSchema } from '../utils/parse';
 
 const JWT_SECRET = settings.JWT_SECRET;
 const JWT_EXPIRATION = settings.JWT_LIFETIME;
 
 export const token = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const body = toTokenRequest(req.body);
+    const result = tokenRequestSchema.safeParse(req.body);
+    if (!result.success) {
+      res.status(400).json('Invalid request parameters');
+      return;
+    }
+    const body = result.data;
     const { clientId, clientSecret } = getCredentials(req, body);
     const client = await Client.findOne({ clientId: clientId });
 
@@ -53,7 +58,7 @@ export const token = async (req: Request, res: Response, next: NextFunction): Pr
       throw new InvalidGrantError('Expired authorization code');
     }
 
-    if (code.redirectUrl && code.redirectUrl !== body.redirect_url) {
+    if (code.redirectUrl && code.redirectUrl !== body.redirect_uri) {
       throw new InvalidGrantError('Invalid redirect url');
     }
     const access_token = jwt.sign(

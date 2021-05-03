@@ -9,8 +9,8 @@ import { AuthenticatedRequest } from '../types';
 const router = express.Router();
 
 router.get('/authorize', getAuthorize);
-
 router.post('/authorize', postAuthorize);
+
 router.post('/token', cors(), token);
 
 router.get('/register', (_req, res) => res.render('register'));
