@@ -1,11 +1,19 @@
 import app from './app';
-import http = require('http');
+import https = require('https');
 import settings from './utils/settings';
+import fs from 'fs';
 
 const port = settings.PORT;
 
-http.createServer(app);
-
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+https
+  .createServer(
+    {
+      key: fs.readFileSync('./key.pem'),
+      cert: fs.readFileSync('./cert.pem'),
+      passphrase: settings.PASSPHRASE
+    },
+    app
+  )
+  .listen(port, () => {
+    console.log(`Server running on port ${port}`);
+  });

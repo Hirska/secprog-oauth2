@@ -12,5 +12,7 @@ export default {
   CLIENT_REDIRECT_URL: env.get('CLIENT_REDIRECT_URL').required().asString(),
 
   JWT_SECRET: env.get('JWT_SECRET').required().asString(),
-  JWT_LIFETIME: env.get('JWT_LIFETIME').required().asInt()
+  JWT_LIFETIME: env.get('JWT_LIFETIME').required().asInt(),
+
+  PASSPHRASE: env.get('PASSPHRASE').required().asString()
 };
