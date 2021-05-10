@@ -1,0 +1,25 @@
+version: '3.1'
+
+services:
+  server:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    ports:
+      - '3000:3000'
+    depends_on:
+      - 'mongodb'
+  mongodb:
+    image: 'docker.io/bitnami/mongodb:4.4'
+    environment:
+      MONGODB_ROOT_PASSWORD: 'root' # example value, change it.
+      MONGODB_USERNAME: 'username' # example value, change it.
+      MONGODB_PASSWORD: 'password' # example value, change it.
+      MONGODB_DATABASE: 'oauth'
+    volumes:
+      - 'mongodb_data:/bitnami/mongodb'
+    ports:
+      - '27018:27017'
+volumes:
+  mongodb_data:
+    driver: local
