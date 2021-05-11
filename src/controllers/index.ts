@@ -6,6 +6,7 @@ import { register } from './Register';
 import authenticate from '../middleware/authenticate';
 import { AuthenticatedRequest } from '../types';
 import { registerClient } from './registerClient';
+import { modifyEmail } from './Secure';
 
 const router = express.Router();
 
@@ -22,5 +23,7 @@ router.post('/client', authenticate('client:write'), registerClient);
 router.get('/secure', cors(), authenticate('profile'), (req: AuthenticatedRequest, res: Response) =>
   res.json(req.user?.email)
 );
+
+router.post('/email', authenticate('profile:write'), modifyEmail);
 
 export default router;

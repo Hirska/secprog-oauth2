@@ -41,6 +41,8 @@ export const uriSchema = z.string().refine(
   }
 );
 
+export const emailSchema = z.string().email();
+
 export const tokenRequestSchema = z.object({
   grant_type: z.nativeEnum(GrantType),
   code: z.string(),
