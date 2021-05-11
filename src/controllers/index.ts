@@ -5,6 +5,7 @@ import { getAuthorize, postAuthorize } from './Authorize';
 import { register } from './Register';
 import authenticate from '../middleware/authenticate';
 import { AuthenticatedRequest } from '../types';
+import { registerClient } from './registerClient';
 
 const router = express.Router();
 
@@ -15,6 +16,8 @@ router.post('/token', cors(), token);
 
 router.get('/register', (_req, res) => res.render('register'));
 router.post('/register', register);
+
+router.post('/client', authenticate('client:write'), registerClient);
 
 router.get('/secure', cors(), authenticate('profile'), (req: AuthenticatedRequest, res: Response) =>
   res.json(req.user?.email)

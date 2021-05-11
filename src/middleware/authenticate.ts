@@ -19,8 +19,13 @@ export default (scope?: string) => {
       if (!user) {
         return res.status(401).json('Unauthorized');
       }
-      if (scope && !decoded.scopes.includes(scope)) {
-        return res.status(404).json('Invalid scope');
+
+      if (scope) {
+        console.log(decoded.loggedIn);
+        // If user is logged in, it has access to all scopes. Otherwise check if token has required scope
+        if (!decoded.loggedIn && !decoded.scopes?.includes(scope)) {
+          return res.status(404).json('Invalid scope');
+        }
       }
 
       //TODO: find better way to extend express-request

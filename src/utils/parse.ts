@@ -50,6 +50,12 @@ export const tokenRequestSchema = z.object({
   code_verifier: z.string().optional()
 });
 
+export const newClientSchema = z.object({
+  clientName: z.string(),
+  isConfidential: z.boolean(),
+  redirectUris: z.array(uriSchema).nonempty()
+});
+
 export default {
   userSchema,
   newUserSchema

@@ -2,9 +2,15 @@
   <div class="row">
     <div class="col-sm-9 col-md-7 col-lg-5 mx-auto">
       <div class="card card-signin my-5">
+        {{#if client}}
         <div class='card-header'>
           <h4 class="card-title text-center">Authorize {{client}} to use your account?</h4>
         </div>
+        {{else}}
+        <div class='card-header'>
+          <h4 class="card-title text-center">Log in to your account</h4>
+        </div>
+        {{/if}}
         <div class="card-body">
           {{#if message}}
             <div class="alert {{messageClass}}" role="alert">
@@ -23,7 +29,9 @@
               <label for="password">Password</label>
             </div>
             <button class="btn btn-lg btn-primary btn-block text-uppercase" type="submit">Sign in</button>
+            {{#if accessDenied}}
             <a class="btn btn-lg btn-secondary btn-block text-uppercase" href='{{accessDenied}}'>Cancel</a>
+            {{/if}}
             <p class='pt-2'>Don't have account yet? <a href='/register?{{returnTo}}'>Sign up here</a></p>
             {{#if scopes}}
               <h5 class='text-success'>This application will be able to:</h5>
