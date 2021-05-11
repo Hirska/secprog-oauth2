@@ -4,22 +4,24 @@ import * as z from 'zod';
 import { newUserSchema, tokenRequestSchema, userSchema } from './utils/parse';
 export interface JWTData {
   userId: string;
-  scopes: string[];
+  scopes?: string[];
+  loggedIn?: boolean;
 }
+
 export interface ICode {
   code: string;
   redirectUrl: string;
   expiresAt: number;
   clientId: string;
   scopes: string[];
-  user: ObjectId | DocumentUser;
+  user: string;
   codeChallenge?: string;
   codeChallengeMethod?: string;
 }
 
 export interface IClient {
-  user: string;
-  redirectUrls: string[];
+  user: ObjectId;
+  redirectUris: string[];
   clientId: string;
   clientSecret?: string;
   clientName: string;
