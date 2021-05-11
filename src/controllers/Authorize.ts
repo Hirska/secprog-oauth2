@@ -1,10 +1,9 @@
 import bcrypt from 'bcrypt';
 import { Request, Response, NextFunction } from 'express';
 import querystring from 'querystring';
-import crypto from 'crypto';
-import { ObjectId } from 'mongoose';
 import { add } from 'date-fns';
 import { ZodError } from 'zod';
+import isEmpty from 'lodash.isempty';
 
 import User from '../models/user';
 import Client from '../models/client';
@@ -27,10 +26,24 @@ import InvalidScopeError from '../errors/InvalidScopeError';
 import InvalidRequestError from '../errors/InvalidRequestError';
 import InvalidClientError from '../errors/InvalidClientError';
 
-import { randomBytesAsync } from '../utils/utils';
+import { createSHA256Hash, generateJwt, randomBytesAsync } from '../utils/utils';
 
 export const postAuthorize = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
+    if (isEmpty(req.query)) {
+      const user = await validateUser(req.body);
+      if (user) {
+        const payload = {
+          userId: user.id as string,
+          loggedIn: true
+        };
+        const { access_token, expires_in } = generateJwt(payload);
+        res.status(200).json({ access_token, expires_in, token_type: 'Bearer' });
+        return;
+      }
+      res.status(400).json({ error: 'Invalid email or password' });
+      return;
+    }
     const { client, redirectUrl } = await validateAuthorizeRequest(req);
     //Set redirect uri to be used in redirect errors
     req.redirectUri = redirectUrl;
@@ -69,11 +82,11 @@ export const postAuthorize = async (req: Request, res: Response, next: NextFunct
     //Generate new authorization code.
     const code = new Code({
       expiresAt: add(Date.now(), { minutes: 10 }),
-      code: crypto.createHash('sha256').update(randomBytes).digest('hex'),
+      code: createSHA256Hash(randomBytes),
       clientId: client.clientId,
       scopes: scopes?.map((scope) => scope.scope),
       redirectUrl,
-      user: user._id as ObjectId,
+      user: user.id as string,
       codeChallenge,
       codeChallengeMethod
     });
@@ -96,6 +109,10 @@ export const postAuthorize = async (req: Request, res: Response, next: NextFunct
 
 export const getAuthorize = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    if (isEmpty(req.query)) {
+      return res.render('authorize');
+    }
     const { client, redirectUrl } = await validateAuthorizeRequest(req);
     //Set redirect uri to be used in redirect errors
     req.redirectUri = redirectUrl;
@@ -155,7 +172,7 @@ const validateClient = async (client_id: unknown): Promise<DocumentClient> => {
 
 const validateRedirectUrl = (redirect_url: unknown, client: DocumentClient): string => {
   const result = uriSchema.safeParse(redirect_url);
-  if (!result.success || !client.redirectUrls.includes(result.data)) {
+  if (!result.success || !client.redirectUris.includes(result.data)) {
     throw new InvalidClientError('Invalid or missing redirect url');
   }
   return result.data;

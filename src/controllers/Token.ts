@@ -1,18 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import auth from 'basic-auth';
-import crypto from 'crypto';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
 import Client from '../models/client';
 import { CodeChallengeMethod, TokenRequest, DocumentCode } from '../types';
 import Code from '../models/code';
 import InvalidGrantError from '../errors/InvalidGrantError';
 import InvalidClientError from '../errors/InvalidClientError';
-import settings from '../utils/settings';
 import { tokenRequestSchema } from '../utils/parse';
-
-const JWT_SECRET = settings.JWT_SECRET;
-const JWT_EXPIRATION = settings.JWT_LIFETIME;
+import { createSHA256Hash, generateJwt } from '../utils/utils';
 
 export const token = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -61,17 +56,15 @@ export const token = async (req: Request, res: Response, next: NextFunction): Pr
     if (code.redirectUrl && code.redirectUrl !== body.redirect_uri) {
       throw new InvalidGrantError('Invalid redirect url');
     }
-    const access_token = jwt.sign(
-      {
-        userId: code.user,
-        scopes: code.scopes
-      },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRATION }
-    );
+    const payload = {
+      userId: code.user,
+      scopes: code.scopes
+    };
+    const { access_token, expires_in } = generateJwt(payload);
+
     //Revoke used authorization code.
     await code.delete();
-    res.status(200).json({ access_token, expires_in: JWT_EXPIRATION, token_type: 'Bearer' });
+    res.status(200).json({ access_token, expires_in, token_type: 'Bearer' });
   } catch (error) {
     return next(error);
   }
@@ -98,7 +91,7 @@ const validateCodeVerifier = (codeVerifier: string, code: DocumentCode) => {
   }
   switch (codeChallengeMethod) {
     case CodeChallengeMethod.S256:
-      const hash = crypto.createHash('sha256').update(codeVerifier).digest('hex');
+      const hash = createSHA256Hash(codeVerifier);
       return Buffer.from(hash).toString('base64') === codeChallenge;
     case CodeChallengeMethod.plain:
       return codeVerifier === codeChallenge;
