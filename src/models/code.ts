@@ -8,7 +8,7 @@ const codeSchema = new mongoose.Schema({
   expiresAt: { type: Number, required: true },
   clientId: { type: String, required: true },
   scopes: { type: Array },
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  user: { type: String, required: true },
   codeChallenge: { type: String },
   codeChallengeMethod: { type: String }
 });
