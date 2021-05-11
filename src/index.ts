@@ -5,15 +5,11 @@ import fs from 'fs';
 
 const port = settings.PORT;
 
-https
-  .createServer(
-    {
-      key: fs.readFileSync('./key.pem'),
-      cert: fs.readFileSync('./cert.pem'),
-      passphrase: settings.PASSPHRASE
-    },
-    app
-  )
-  .listen(port, () => {
-    console.log(`Server running on port ${port}`);
-  });
+const options = {
+  key: fs.readFileSync('./key.pem'),
+  cert: fs.readFileSync('./cert.pem'),
+  passphrase: settings.PASSPHRASE
+};
+https.createServer(options, app).listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});

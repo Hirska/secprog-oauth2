@@ -1,5 +1,16 @@
 # OAuth 2.0 server with authorization code flow
 
+## How to set up
+Application expects repository to include self signed certificate for HTTPS. Run following command to generate certificate:
+
+- *openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365*
+
+Run following command to run the system:
+
+- *docker-compose up*
+
+## Introduction
+
 This repository includes simple OAuth 2.0 server with authorization code flow. Application includes login page which asks permission from user to give third-party application access to specific scopes. Client must be registered to ask access, but currently dynamic client registration is not included.
 
 In this repository, Authorization code flow for OAuth is implemented. Flow is implemented for confidential clients with client secret and public clients with PKCE ([Proof Key for Code Exchange](https://oauth.net/2/pkce/)). Implemente flow is shown in diagram below.
@@ -41,6 +52,8 @@ Authorization code is used to obtain access token. Access token request uses JSO
 - *code_verifier* **required if code_challenge was used**. Original code before encryption.
 - *client_secret* **required if confidential client**. Client secret which was added to client on creation.
 
+If parameters are correct. Access token is returned to user with specific lifetime. Access token can be used to fetch data from API.
+
 ## Structure of the program
 
 Program is made with Node.js, Express.js and Handlebars as template-engine. Source-code is located in src-folder.
@@ -57,20 +70,50 @@ Token handles token generation and authorization code validation. If authorizati
 
 ### errors
 
-Errors include
+Errors include all errors which are used to give information to application or user. There is errors which redirect user agent back to requestor site and errors which are shown to user in authorization server log in screen.
 
 ### middleware
 
+Middlewares are functions which have access to request- and response object. Usually used as general method before handling request. For example isAuthenticated could be middleware.
 ### models
+
+Models are data-types which are used to save necessary data to MongoDB-database. There are following models.
+
+- *client* is used to save clients which can request authorization to users data.
+- *code* is generated code when authorization is requested and user signs in with consent.
+- *scope* is used to limit access to users data. Authorization server can request access to specified scope which is shown to user when signing in.
+- *user* is user of this specified service. Client can request users data with users consent.
 
 ### setup
 
+Setup is used to set needed initial data to database before first startup. As there is no dynamic client registration, clients are set with setup. Also scopes are set in setup.
+
 ### utils
+
+Utils include functions which are used in multiple places. Important. There is following utils-files.
+
+- *errorHandler* include error handling for application.
+
+- *parse* include input validation and parsing
+
+- *settings* include environment variable parsing.
+
+- *utils* include general utility-function.
 
 ### views
 
+Views include views for this application. There is following views:
+
+- *authorize* is used to show user sign in screen with specified scope which can be consented or rejected.
+
+- *error* is shown if that specific error should be shown in authorization server
+
+- *register* is shown when new user needs to be registered.
+
 ## Secure programming solutions
 
+
 ## Security testing
+
 
 ## Improvements
