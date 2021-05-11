@@ -8,7 +8,7 @@ const clientSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   redirectUris: { type: Array, required: true },
   clientId: { type: String },
-  clientName: { type: String, required: true },
+  clientName: { type: String, unique: true },
   isConfidential: { type: Boolean, required: true },
   clientSecret: { type: String }
 });

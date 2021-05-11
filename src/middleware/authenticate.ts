@@ -21,7 +21,6 @@ export default (scope?: string) => {
       }
 
       if (scope) {
-        console.log(decoded.loggedIn);
         // If user is logged in, it has access to all scopes. Otherwise check if token has required scope
         if (!decoded.loggedIn && !decoded.scopes?.includes(scope)) {
           return res.status(404).json('Invalid scope');
