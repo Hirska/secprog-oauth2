@@ -27,6 +27,14 @@ export const registerClient = async (req: Request, res: Response, next: NextFunc
     return;
   } catch (error) {
     if (error instanceof ZodError) {
+      //TODO Find better way to handle with errors
+      if (error.errors.length > 0) {
+        const code = error.errors[0].code;
+        if (code === 'custom_error') {
+          res.json({ error: 'Only a-z A-Z 0-9 for clientName' });
+          return;
+        }
+      }
       res.status(400).json({ error: 'Invalid request: clientName, isConfidential, redirectUris required' });
       return;
     }

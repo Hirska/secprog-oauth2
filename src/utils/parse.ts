@@ -1,12 +1,19 @@
 import { GrantType, CodeChallengeMethod, ResponseType } from '../types';
 import * as z from 'zod';
 import isURL from 'validator/lib/isURL';
+import isAlphaNumeric from 'validator/lib/isAlphanumeric';
+import isStrongPassword from 'validator/lib/isStrongPassword';
 
 export const responseTypeSchema = z.nativeEnum(ResponseType);
 export const stringSchema = z.string();
 export const optStringSchema = z.string().optional();
 export const uuidSchema = z.string().uuid();
-
+export const strongPassword = z.string().refine(
+  (val) => {
+    return isStrongPassword(val);
+  },
+  { message: 'Min 8 letters. Must contain 1 lowercase, 1 uppercase, 1 symbol' }
+);
 export const userSchema = z.object({
   email: z.string().email(),
   password: z.string()
@@ -15,7 +22,7 @@ export const userSchema = z.object({
 export const newUserSchema = z
   .object({
     email: z.string().email(),
-    password: z.string(),
+    password: strongPassword,
     confirmPassword: z.string()
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -53,7 +60,7 @@ export const tokenRequestSchema = z.object({
 });
 
 export const newClientSchema = z.object({
-  clientName: z.string(),
+  clientName: z.string().refine((val) => isAlphaNumeric(val)),
   isConfidential: z.boolean(),
   redirectUris: z.array(uriSchema).nonempty()
 });
