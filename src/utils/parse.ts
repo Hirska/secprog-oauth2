@@ -60,9 +60,9 @@ export const tokenRequestSchema = z.object({
 });
 
 export const newClientSchema = z.object({
-  clientName: z.string().refine((val) => isAlphaNumeric(val)),
-  isConfidential: z.boolean(),
-  redirectUris: z.array(uriSchema).nonempty()
+  client_name: z.string().refine((val) => isAlphaNumeric(val)),
+  is_confidential: z.boolean(),
+  redirect_uris: z.array(uriSchema).nonempty()
 });
 
 export default {

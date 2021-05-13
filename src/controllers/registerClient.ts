@@ -7,12 +7,12 @@ import { createSHA256Hash, randomBytesAsync } from '../utils/utils';
 
 export const registerClient = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { clientName, isConfidential, redirectUris } = newClientSchema.parse(req.body);
-    const clientSecret = isConfidential ? createSHA256Hash(await randomBytesAsync(64)) : undefined;
+    const { client_name, is_confidential, redirect_uris } = newClientSchema.parse(req.body);
+    const clientSecret = is_confidential ? createSHA256Hash(await randomBytesAsync(64)) : undefined;
     const newClient = new Client({
-      clientName,
-      isConfidential,
-      redirectUris,
+      clientName: client_name,
+      isConfidential: is_confidential,
+      redirectUris: redirect_uris,
       clientSecret,
       user: req.user?._id as ObjectId
     });
