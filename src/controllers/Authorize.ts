@@ -14,7 +14,6 @@ import { DocumentUser, DocumentClient, DocumentScope, CodeChallengeMethod } from
 
 import {
   userSchema,
-  stringSchema,
   uriSchema,
   codeChallengeSchema,
   optStringSchema,
@@ -145,10 +144,20 @@ const validateAuthorizeRequest = async (req: Request) => {
 };
 
 const validateScopes = async (scope: unknown): Promise<DocumentScope[] | undefined> => {
-  const result = stringSchema.safeParse(scope);
+  const result = optStringSchema.safeParse(scope);
   if (!result.success) {
     throw new InvalidScopeError(`Invalid scopes`);
   }
+
+  //Default to default scopes if there is no required scopes
+  if (!result.data) {
+    const defaultScopes = await Scope.find({ default: true });
+    if (defaultScopes.length === 0) {
+      return;
+    }
+    return defaultScopes;
+  }
+
   const scopes: DocumentScope[] = [];
   for (const scope of result.data.split(' ')) {
     const validScope = await Scope.findOne({ scope }).orFail(new InvalidScopeError(`Invalid scope: ${scope}`));

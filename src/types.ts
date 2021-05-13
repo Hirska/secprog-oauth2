@@ -39,6 +39,7 @@ export interface INewUser extends z.infer<typeof newUserSchema> {
 export interface IScope {
   scope: string;
   description: string;
+  default?: boolean;
 }
 export interface AuthorizationRequest {
   response_type: ResponseType;

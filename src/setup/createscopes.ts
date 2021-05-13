@@ -1,7 +1,7 @@
 import Scope from '../models/scope';
 
 const scopes = [
-  { scope: 'profile:read', description: 'This gives access to your profile information' },
+  { scope: 'profile:read', description: 'This gives access to your profile information', default: true },
   { scope: 'profile:write', description: 'This gives write access to your email' }
 ];
 
