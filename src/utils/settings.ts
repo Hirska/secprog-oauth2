@@ -11,5 +11,5 @@ export default {
   JWT_SECRET: env.get('JWT_SECRET').required().asString(),
   JWT_LIFETIME: env.get('JWT_LIFETIME').required().asInt(),
 
-  PASSPHRASE: env.get('PASSPHRASE').required().asString()
+  HTTPS_PASSPHRASE: env.get('PASSPHRASE').required().asString()
 };

@@ -9,7 +9,7 @@ const port = settings.PORT;
 const options = {
   key: fs.readFileSync('./key.pem'),
   cert: fs.readFileSync('./cert.pem'),
-  passphrase: settings.PASSPHRASE
+  passphrase: settings.HTTPS_PASSPHRASE
 };
 https.createServer(options, app).listen(port, () => {
   logger.info(`Server running on port ${port}`);
