@@ -4,7 +4,7 @@ mongoose.set('useFindAndModify', false);
 
 const codeSchema = new mongoose.Schema({
   code: { type: String, required: true },
-  redirectUrl: { type: String },
+  redirectUri: { type: String },
   expiresAt: { type: Number, required: true },
   clientId: { type: String, required: true },
   scopes: { type: Array },

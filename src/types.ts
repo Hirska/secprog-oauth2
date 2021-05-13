@@ -1,5 +1,4 @@
 import { Document, ObjectId } from 'mongoose';
-import { Request } from 'express';
 import * as z from 'zod';
 import { newUserSchema, tokenRequestSchema, userSchema } from './utils/parse';
 export interface JWTData {
@@ -10,7 +9,7 @@ export interface JWTData {
 
 export interface ICode {
   code: string;
-  redirectUrl: string;
+  redirectUri: string;
   expiresAt: number;
   clientId: string;
   scopes: string[];
@@ -44,20 +43,11 @@ export interface IScope {
 export interface AuthorizationRequest {
   response_type: ResponseType;
   client_id: string;
-  redirect_url?: string;
+  redirect_uri?: string;
   scope?: string;
   state?: string;
 }
-/*
-export interface TokenRequest {
-  grant_type: GrantType;
-  code: string;
-  redirect_url?: string;
-  client_id?: string;
-  client_secret?: string;
-  code_verifier?: string;
-}
-*/
+
 export type TokenRequest = z.infer<typeof tokenRequestSchema>;
 
 export enum GrantType {
@@ -81,7 +71,3 @@ export interface DocumentClient extends IClient, Document {}
 export interface DocumentUser extends IUser, Document {}
 export interface DocumentScope extends IScope, Document {}
 export interface DocumentCode extends ICode, Document {}
-
-export interface AuthenticatedRequest extends Request {
-  user?: DocumentUser;
-}

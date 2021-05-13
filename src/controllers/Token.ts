@@ -17,6 +17,7 @@ export const token = async (req: Request, res: Response, next: NextFunction): Pr
       return;
     }
     const body = result.data;
+
     const { clientId, clientSecret } = getCredentials(req, body);
     const client = await Client.findOne({ clientId: clientId });
 
@@ -53,8 +54,8 @@ export const token = async (req: Request, res: Response, next: NextFunction): Pr
       throw new InvalidGrantError('Expired authorization code');
     }
 
-    if (code.redirectUrl && code.redirectUrl !== body.redirect_uri) {
-      throw new InvalidGrantError('Invalid redirect url');
+    if (code.redirectUri && code.redirectUri !== body.redirect_uri) {
+      throw new InvalidGrantError('Invalid redirect uri');
     }
     const payload = {
       userId: code.user,

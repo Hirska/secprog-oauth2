@@ -44,9 +44,9 @@ export const postAuthorize = async (req: Request, res: Response, next: NextFunct
       res.status(400).json({ error: 'Invalid email or password' });
       return;
     }
-    const { client, redirectUrl } = await validateAuthorizeRequest(req);
+    const { client, redirectUri } = await validateAuthorizeRequest(req);
     //Set redirect uri to be used in redirect errors
-    req.redirectUri = redirectUrl;
+    req.redirectUri = redirectUri;
 
     const scopes: DocumentScope[] | undefined = await validateScopes(req.query.scope);
 
@@ -57,7 +57,7 @@ export const postAuthorize = async (req: Request, res: Response, next: NextFunct
       client
     );
 
-    //Redirect user back to redirect url if invalid response_type
+    //Redirect user back to redirect uri if invalid response_type
     responseTypeSchema.parse(req.query.response_type);
 
     // Returns DocumentUser or undefined
@@ -70,7 +70,7 @@ export const postAuthorize = async (req: Request, res: Response, next: NextFunct
           req,
           scopes?.map((scope) => scope.description),
           client.clientName,
-          redirectUrl,
+          redirectUri,
           'Invalid username or password'
         )
       );
@@ -85,7 +85,7 @@ export const postAuthorize = async (req: Request, res: Response, next: NextFunct
       code: createSHA256Hash(randomBytes),
       clientId: client.clientId,
       scopes: scopes?.map((scope) => scope.scope),
-      redirectUrl,
+      redirectUri,
       user: user.id as string,
       codeChallenge,
       codeChallengeMethod
@@ -95,7 +95,7 @@ export const postAuthorize = async (req: Request, res: Response, next: NextFunct
     const queryparams = generateQuerystring(code.code, state);
 
     //redirect authorization code to callback address.
-    res.redirect(`${redirectUrl}?${queryparams}`);
+    res.redirect(`${redirectUri}?${queryparams}`);
   } catch (error) {
     if (error instanceof ZodError) {
       return next(new InvalidRequestError('Invalid request'));
@@ -113,9 +113,9 @@ export const getAuthorize = async (req: Request, res: Response, next: NextFuncti
     if (isEmpty(req.query)) {
       return res.render('authorize');
     }
-    const { client, redirectUrl } = await validateAuthorizeRequest(req);
+    const { client, redirectUri } = await validateAuthorizeRequest(req);
     //Set redirect uri to be used in redirect errors
-    req.redirectUri = redirectUrl;
+    req.redirectUri = redirectUri;
 
     const scopes: DocumentScope[] | undefined = await validateScopes(req.query.scope);
     return res.render(
@@ -124,7 +124,7 @@ export const getAuthorize = async (req: Request, res: Response, next: NextFuncti
         req,
         scopes?.map((scope) => scope.description),
         client.clientName,
-        redirectUrl
+        redirectUri
       )
     );
   } catch (error) {
@@ -138,11 +138,10 @@ export const getAuthorize = async (req: Request, res: Response, next: NextFuncti
 const validateAuthorizeRequest = async (req: Request) => {
   const client = await validateClient(req.query.client_id);
 
-  //Redirect url is required
-  //TODO: Change redirectUrls to redirectUris
-  const redirectUrl = validateRedirectUrl(req.query.redirect_uri, client);
+  //Redirect uri is required
+  const redirectUri = validateRedirectUri(req.query.redirect_uri, client);
 
-  return { client, redirectUrl };
+  return { client, redirectUri };
 };
 
 const validateScopes = async (scope: unknown): Promise<DocumentScope[] | undefined> => {
@@ -159,7 +158,6 @@ const validateScopes = async (scope: unknown): Promise<DocumentScope[] | undefin
 };
 
 const validateClient = async (client_id: unknown): Promise<DocumentClient> => {
-  //TODO: add specific parse for uuid
   const result = uuidSchema.safeParse(client_id);
   if (!result.success) {
     throw new InvalidClientError('Invalid or missing client');
@@ -170,10 +168,10 @@ const validateClient = async (client_id: unknown): Promise<DocumentClient> => {
   return client;
 };
 
-const validateRedirectUrl = (redirect_url: unknown, client: DocumentClient): string => {
-  const result = uriSchema.safeParse(redirect_url);
+const validateRedirectUri = (redirect_uri: unknown, client: DocumentClient): string => {
+  const result = uriSchema.safeParse(redirect_uri);
   if (!result.success || !client.redirectUris.includes(result.data)) {
-    throw new InvalidClientError('Invalid or missing redirect url');
+    throw new InvalidClientError('Invalid or missing redirect uri');
   }
   return result.data;
 };
@@ -225,11 +223,11 @@ const generateInputObject = (
   req: Request,
   scopes: string[] | undefined,
   client: string,
-  redirectUrl: string,
+  redirectUri: string,
   message?: string
 ) => {
   const returnTo = querystring.stringify({ return_to: req.originalUrl });
-  const accessDenied = `${redirectUrl}?${querystring.stringify({ error: 'access_denied' })}`;
+  const accessDenied = `${redirectUri}?${querystring.stringify({ error: 'access_denied' })}`;
 
   return { message, messageClass: 'alert-danger', scopes, returnTo, accessDenied, client };
 };
