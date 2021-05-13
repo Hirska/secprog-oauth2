@@ -75,6 +75,7 @@ Errors include all errors which are used to give information to application or u
 ### middleware
 
 Middlewares are functions which have access to request- and response object. Usually used as general method before handling request. For example isAuthenticated could be middleware.
+
 ### models
 
 Models are data-types which are used to save necessary data to MongoDB-database. There are following models.
@@ -112,8 +113,60 @@ Views include views for this application. There is following views:
 
 ## Secure programming solutions
 
+Following list is used to present vulnerabilities and secure programming solutions to prevent those.
+
+### Injection
+
+Injection is prevented with input validation. Validators are located in *src/utils/parse* and validators are used to validate all incoming data. As mongodb is used as database, injection could be done for example with *email : { $ne : null}* which would return all emails which are not null. To prevent this, incoming emails are parsed and checked to be strings before using them.
+
+### Broken authentication
+
+When creating new users, password is checked to include atleast 1 lowercase, 1 uppercase, 1 symbol and length must be atleast 8 letters. However passwords are not checked against well known passwords which means that password could be for example *Password1.* There is no possibility to recover password, which prevents attacks with ineffective credential recovery.
+
+When user registers to this application, password is hashed with bcrypt. In case of data breach, passwords could not be recovered from database. When user logs in, JWT-cookie is assigned and returned which prevents session specific attacks.
+
+This application doesn't prevent brute force or other automated attacks as it doesn't have rate limiter. This could be added in future for example with *node-rate-limiter-flexible* package.
+
+### Sensitive data exposure
+
+Only sensitive data in this application is passwords and client secrets Bcrypt is used to hash password and client secrets which prevents sensitive data exposure. Client secret is presented to client during registration which should be then saved by client. HTTPS is used which prevents transmission of sensitive data as clear text.
+
+Client side caching is disabled with headers *cache-control=no store* and *Pragma=no-cache*. These are used to prevent caching response which includes access tokens. Also other security headers are used with *helmet* package.
+
+### Broken access control
+
+Users are able use all endpoints which require authentication when logged in. Client is able to get user specific data if user has authorized that specifi client with required scope. Scopes are specified view to users information, for example *profile:read* which could give access to read users profile information. Authentication and correct profile is checked with *authenticate* middleware.
+
+### Security misconfiguration
+
+To configure express application securely, site https://expressjs.com/en/advanced/best-practice-security.html is used as guide. With help of this guide, following things are checked.
+
+- TLS is used
+- Helmet is used
+- Dependencies are audited
+- Input is validated
+
+### Cross-Site Scripting
+
+[Handlebars](https://handlebarsjs.com/) is used as template engine which enables html escaping by default. Also submitted information by user is not shown in website expect client name. Client name is checked to be alphanumeric.
+
+### Using components with known vulnerabilities
+
+*npm audit* is used to find known vulnerabilities in used packages. Also *npm audit* is used to find vulnerabilities in used. If issues are found, *npm audit fix* is first run. If issues are not fixed with that, vulnerable package is removed and alternative found. Repository does not have any known vulnerabilities found by npm audit.
+
+
 
 ## Security testing
+
+Security testing is done mainly as manual testing. 
+## Test client registration
+
+### Test authorization code flow with confidential client
+
+
+
+### Test authorization code flow with public client
+
 
 
 ## Improvements
