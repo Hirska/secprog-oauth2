@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 import { stringSchema } from '../utils/parse';
 import settings from '../utils/settings';
-import { AuthenticatedRequest, JWTData } from '../types';
+import { JWTData } from '../types';
 import User from '../models/user';
 
 export default (scope?: string) => {
@@ -26,9 +26,7 @@ export default (scope?: string) => {
           return res.status(404).json('Invalid scope');
         }
       }
-
-      //TODO: find better way to extend express-request
-      (req as AuthenticatedRequest).user = user;
+      req.user = user;
       return next();
     } catch (error) {
       return next(error);

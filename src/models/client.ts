@@ -16,7 +16,6 @@ const clientSchema = new mongoose.Schema({
 clientSchema.pre<DocumentClient>('save', async function (next) {
   // eslint-disable-next-line @typescript-eslint/no-this-alias
   const client = this;
-  //TODO: Disable clientSecret from public clients
   if (!client.isModified('clientSecret')) return next();
   if (client.isConfidential && client.clientSecret) {
     client.clientSecret = await bcrypt.hash(client.clientSecret, 10);
