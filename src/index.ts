@@ -2,6 +2,7 @@ import app from './app';
 import https = require('https');
 import settings from './utils/settings';
 import fs from 'fs';
+import logger from './utils/logger';
 
 const port = settings.PORT;
 
@@ -11,5 +12,5 @@ const options = {
   passphrase: settings.PASSPHRASE
 };
 https.createServer(options, app).listen(port, () => {
-  console.log(`Server running on port ${port}`);
+  logger.info(`Server running on port ${port}`);
 });

@@ -4,7 +4,7 @@ import querystring from 'querystring';
 import { add } from 'date-fns';
 import { ZodError } from 'zod';
 import isEmpty from 'lodash.isempty';
-
+import logger from '../utils/logger';
 import User from '../models/user';
 import Client from '../models/client';
 import Scope from '../models/scope';
@@ -202,10 +202,12 @@ const validateUser = async (data: { email: unknown; password: unknown }): Promis
   const user: DocumentUser | null = await User.findOne({ email });
 
   if (!user) {
+    logger.info(`Log in with invalid email ${email}`);
     return;
   }
   const comparePassword = await bcrypt.compare(password, user.password);
   if (!comparePassword) {
+    logger.info(`Invalid password with email ${email}`);
     return;
   }
   return user;
