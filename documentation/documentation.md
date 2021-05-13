@@ -14,7 +14,7 @@ When client is registered, following properties are required.
 - confidential. Is client confidential or not. This is used to determine if PKCE or client secret should be user
 - clientSecret. If client is confidential, client secret should be added
 
-![Authorization flow](authorization_flow.png)
+![Authorization flow](Authorization_code.jpg)
 
 Flow starts with application requesting authorization code flow. In this stage, user agent (browser such as Chrome) is redirected to authorization servers log in screen. Query parameters must include _redirect_uri_, _response_type_ and _client_id_. If client is public, PKCE specific _code_challenge_ is required and* code_challenge_method*is optional. Optional parameters are*scope*, _state_.
 
