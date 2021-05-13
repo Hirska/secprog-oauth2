@@ -1,0 +1,167 @@
+openapi: '3.0.0'
+
+info:
+  description: API for OAuth server. Register as user in [here](https://localhost:3000/register)
+  version: '1.0.0'
+  title: OAuth server
+servers:
+  - url: 'https://localhost:3000'
+    description: Local server
+
+tags:
+  - name: OAuth
+    description: Login and register
+
+paths:
+  /authorize:
+    post:
+      tags:
+        - OAuth
+      summary: Login in the application
+      description: Log in as user
+      operationId: login
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        401:
+          description: 'Unauthorized. Invalid credentials.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+  /client:
+    post:
+      tags:
+        - OAuth
+      summary: Register in the application
+      operationId: registerClient
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewClient'
+  /token:
+    post:
+      tags:
+        - OAuth
+      summary: Register in the application
+      operationId: token
+      description: Exchange authorization token to access token
+      responses:
+        200:
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+externalDocs:
+  description: Find out more about Swagger
+  url: 'http://swagger.io'
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    User:
+      type: object
+      properties:
+        email:
+          type: string
+          example: 'user@user.fi'
+        password:
+          type: string
+          format: password
+    TokenRequest:
+      type: object
+      properties:
+        grant_type:
+          type: string
+          example: authorization_code
+          description: specifies used grant flow
+        code:
+          type: string
+          example: ded2ea4a2dd3c125669a391b1b44c6806a8e6f7b763cce9d820bb2d259bd6dcc
+          description: obtained authorization code in authorization request
+        client_id:
+          type: string
+          format: uuid
+          example: f483e9d7-4b73-4a67-84b3-17b2357eede3
+          description: client id which was used to make initial authorization request
+        client_secret:
+          type: string
+          example: f483e9d7-4b73-4a67-84b3-17b2357eede3
+          description: client secret if client is confidential
+        redirect_uri:
+          type: string
+          format: uri
+          example: 'http://localhost:3000'
+          description: Redirect uri which was used in initial authorization request
+    Client:
+      type: object
+      properties:
+        clientName:
+          type: string
+          example: myClient
+        isConfidential:
+          type: boolean
+          example: true
+        redirectUris:
+          type: array
+          items:
+            type: string
+            format: url
+            example: 'https://localhost:3000/callback'
+        clientSecret:
+          type: string
+          example: f483e9d74b734a6784b317b2357eede3
+          description: client secret used to authenticate client
+    NewClient:
+      type: object
+      properties:
+        client_name:
+          type: string
+          example: myClient
+        is_confidential:
+          type: boolean
+          example: true
+        redirect_uris:
+          type: array
+          items:
+            type: string
+            format: url
+            example: 'https://localhost:3000/callback'
+    AccessToken:
+      type: object
+      properties:
+        access_token:
+          type: string
+        expires_in:
+          type: number
+          example: 3600
+        token_type:
+          type: string
+          example: Bearer
