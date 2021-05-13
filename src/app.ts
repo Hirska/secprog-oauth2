@@ -1,4 +1,3 @@
-import mongoose from 'mongoose';
 import express from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -6,10 +5,11 @@ import exphbs from 'express-handlebars';
 import handleError from './utils/errorHandler';
 import controllers from './controllers';
 import path from 'path';
-import setup from './setup';
-import settings from './utils/settings';
+import { connectToDB } from './db';
 
 const app = express();
+
+connectToDB();
 
 /**
  * Define template engine
@@ -23,20 +23,6 @@ app.engine(
   })
 );
 app.set('view engine', 'hbs');
-
-const MONGODB_URI = settings.MONGODB_URI;
-
-mongoose
-  .connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true })
-  .then(() => {
-    console.log('connected to MongoDb');
-    setup()
-      .then(() => console.log('Setup finished'))
-      .catch((error) => console.log(error));
-  })
-  .catch((error) => {
-    console.log('error connection to MongoDB:', error.message);
-  });
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
