@@ -4,15 +4,15 @@
 
 This repository includes simple OAuth 2.0 server with authorization code flow. Application includes login page which asks permission from user to give third-party application access to specific scopes. Client must be registered to ask access, but currently dynamic client registration is not included.
 
-In this repository, Authorization code flow for OAuth is implemented. Flow is implemented for confidential clients with client secret and public clients with PKCE ([Proof Key for Code Exchange](https://oauth.net/2/pkce/)). Implemente flow is shown in diagram below.
+In this repository, Authorization code flow for OAuth is implemented. Flow is implemented for confidential clients with client secret and public clients with PKCE ([Proof Key for Code Exchange](https://oauth.net/2/pkce/)). 
 
-Currently dynamic client registration is not implemented as this repository as this repository is used only to illustrate authorization code flow. Dummy clients are added when server is started but clients could be added straight to database if needed.
+Client registration is required to get authorization code from user. When client is registered, following properties are required.
 
-When client is registered, following properties are required.
+- *redirectUris*. These include all redirectUris that could be used when requesting authorization code for this client
+- *isConfidential*. Is client confidential or not. This is used to determine if PKCE or client secret should be user
+- *clientName*
 
-- redirectUris. These include all redirectUris that could be used when requesting authorization code for this client
-- confidential. Is client confidential or not. This is used to determine if PKCE or client secret should be user
-- clientSecret. If client is confidential, client secret should be added
+Implemente flow is shown in diagram below.
 
 ![Authorization flow](Authorization_code.jpg)
 
@@ -36,7 +36,7 @@ Example. http://localhost:3000/callback?code=108788d45bb5c0e40374c30911bc169fb83
 
 Authorization code is used to obtain access token. Access token request uses JSON-body and it should include following parameters
 
-- _grant_type_ **required**. Is used to tell authorization server, which grant type was used for authorization request.http://localhost:3000/callback?code=108788d45bb5c0e40374c30911bc169fb83548c1df9f7c2037ecc7413e9e0fdc
+- _grant_type_ **required**. Is used to tell authorization server, which grant type was used for authorization request.
 - _code_ **required**. Code obtained in authorization-request
 - _client_id_ **required**. Client which was used to obtain initial authorization code.
 - _redirect_uri_ **required**. Redirect uri which was used in initial authorization-request.

@@ -31,6 +31,28 @@ Run system **locally**
 
 Server runs in https://localhost:3000
 
+## How to use
+
+There is 2 views in this application: Authorize and Register. 
+
+- Authorize is located in https://localhost:3000/authorize. Used to log in as user or to authorize clients
+- Register is located in https://localhost:3000/register. Used to register new users
+
+There is also REST-endpoint which can be seen from https://localhost:3000/docs
+
+### Flow to get access token with client authorization
+
+1. Create user in https://localhost:3000/register
+2. Authenticate with new user in https://localhost:3000/authorize which will return access token
+3. Use access token as Bearer in authorization-header and post to /client to generate client. Check https://localhost:3000/docs and picture below for help
+
+![register client](documentation/register_client.png)
+
+
+4. Use returned client_id, redirect_uri to start authorization with client (Example https://localhost:3000/authorize?client_id=005956ea-8851-44a1-89c7-2eda997f3afe&redirect_uri=https://localhost:3000/callback&scope=profile:write&response_type=code). Check further documentation on required and optional parameters
+5. Log in with previously created user. 
+6. Copy code from request parameter and 
+
 ## Further documentation
 
 Read further documentation from [here](documentation/documentation.md). Documentation includes introduction to codebase, security considerations and instruction on how to use the system.
