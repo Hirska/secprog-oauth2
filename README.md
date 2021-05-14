@@ -49,9 +49,10 @@ There is also REST-endpoint which can be seen from https://localhost:3000/docs
 ![register client](documentation/register_client.png)
 
 
-4. Use returned client_id, redirect_uri to start authorization with client (Example https://localhost:3000/authorize?client_id=005956ea-8851-44a1-89c7-2eda997f3afe&redirect_uri=https://localhost:3000/callback&scope=profile:write&response_type=code). Check further documentation on required and optional parameters
+4. Use returned *client_id*, *redirect_uri* and *response_type=code*, and optionally *state* and *scope* parameters to start authorization with client (Example https://localhost:3000/authorize?client_id=005956ea-8851-44a1-89c7-2eda997f3afe&redirect_uri=https://localhost:3000/callback&scope=profile:read&response_type=code). Check further documentation for required and optional parameters.
 5. Log in with previously created user. 
-6. Copy code from request parameter and 
+6. Use returned code, *client_id*, *client_secret* from **point 3** and *redirect_uri* which was used for request in **point 4** to post to /token-endpoint. Check scheme **ConfidentialTokenRequest** from https://localhost:3000/docs
+7. Use returned endpoint to access secured endpoints. Check Secure-enpoints from https://localhost:3000/docs. Access depends on required scopes. Get can be used if *profile:read* is required, Post can be used if *profile:write*
 
 ## Further documentation
 

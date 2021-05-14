@@ -8,9 +8,9 @@ In this repository, Authorization code flow for OAuth is implemented. Flow is im
 
 Client registration is required to get authorization code from user. When client is registered, following properties are required.
 
-- *redirectUris*. These include all redirectUris that could be used when requesting authorization code for this client
-- *isConfidential*. Is client confidential or not. This is used to determine if PKCE or client secret should be user
-- *clientName*
+- *redirect_uris* **required**. These include all redirectUris that could be used when requesting authorization code for this client
+- *is_confidential* **required**. Is client confidential or not. Client secret as authentication method is used for confidential clients and PKCE for public clients.
+- *client_name* **required**. Name of the client, will be visible for user when requesting access.
 
 Implemente flow is shown in diagram below.
 
@@ -18,15 +18,15 @@ Implemente flow is shown in diagram below.
 
 Flow starts with application requesting authorization code flow. In this stage, user agent (browser such as Chrome) is redirected to authorization servers log in screen. Query parameters must include _redirect_uri_, _response_type_ and _client_id_. If client is public, PKCE specific _code_challenge_ is required and* code_challenge_method*is optional. Optional parameters are*scope*, _state_.
 
-- _redirect_uri_ is uri where user agent is redirected after erronous or successful authorization.
-- _response_type_ is used to tell authorization server, which grant type is executed. **Only code is supported** (code stands for authorization code flow).
-- _client_id_ is id which is assigned to client on registration.
-- _code_challenge_ is dynamically generated code in application. Should be cryptographically random string.
-- _code_challenge_method_ has either value _plain_ or _s256_. This depends on if code challenge is SHA256 hash of the string or plain string. If code\*challenge*method is omitted, server will assume it to be \_plain*
-- _scope_ is scope which application will get access to users data.
-- _state_ is random string which is used to prevent CSRF attacks. Authorization server returns state back unmodified.
+- _redirect_uri_ **required**. Uri where user agent is redirected after erronous or successful authorization.
+- _response_type_ **required**. Used to tell authorization server, which grant type is executed. **Only code is supported**
+- _client_id_ **required**. Id which is assigned to client on registration.
+- _code_challenge_ **required if client is not confidential**. Dynamically generated code in application. Should be cryptographically random string.
+- _code_challenge_method_ **optional**. Either value _plain_ or _s256_. This depends on if code challenge is SHA256 hash of the string or plain string. If *code_challenge_method* is omitted, server will assume it to be *plain*. **If s256 is used, code_challenge must be hashed with s256 and base64-encoded**
+- _scope_ **optional**. Scope which application will get access to users data. Possible values *profile:read* *profile:write*. Defaults to *profile:read*. **Must be separated by empty space or + if using multiple. Example scope=profile:read profile:write**
+- _state_ **optional but recommended**. Random string which is used to prevent CSRF attacks. Authorization server returns state back unmodified.
 
-Example. https://localhost:3000/authorize?client_id=f461489a-a604-4cb6-a1e7-98a01eee1d66&response_type=code&scope=profile&code_challenge=abc&code_challenge_method=s256&redirect_uri=http://localhost:3000/callback
+Example. https://localhost:3000/authorize?client_id=f461489a-a604-4cb6-a1e7-98a01eee1d66&response_type=code&scope=profile:read+profile:write&code_challenge=abc&code_challenge_method=plain&redirect_uri=http://localhost:3000/callback
 
 ![Log in](log_in.png)
 
@@ -78,7 +78,7 @@ Models are data-types which are used to save necessary data to MongoDB-database.
 
 ### setup
 
-Setup is used to set needed initial data to database before first startup. As there is no dynamic client registration, clients are set with setup. Also scopes are set in setup.
+Setup is used to set needed initial data to database before first startup. Only scopes and admin user are setup here.
 
 ### utils
 
