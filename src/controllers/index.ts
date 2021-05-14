@@ -20,7 +20,9 @@ router.post('/register', register);
 router.post('/client', authenticate('client:write'), registerClient);
 
 // Used as example on how to use access tokens with scope
-router.get('/secure', cors(), authenticate('profile:read'), (req: Request, res: Response) => res.json(req.user?.email));
-router.post('/email', authenticate('profile:write'), modifyEmail);
+router.get('/email', cors(), authenticate('profile:read'), (req: Request, res: Response) =>
+  res.json({ email: req.user?.email })
+);
+router.post('/email', cors(), authenticate('profile:write'), modifyEmail);
 
 export default router;
