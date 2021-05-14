@@ -153,7 +153,6 @@ Logging is handled with _winston_ package which is used to log necessary informa
 
 OAuth server could be used as open redirector which redirects users offsite. This vulnerability could cause phishing-attacks. This is prevented by validating redirect uris to be same as when registering client. If redirect uri is different, error message is shown and user is **not** redirected.
 
-Authorization code injection is vulnerability where
 ## Security testing
 
 Security testing is done mainly as manual testing. Dependency security is tested with *npm audit*
