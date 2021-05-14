@@ -40,11 +40,11 @@ There is 2 views in this application: Authorize and Register.
 
 There is also REST-endpoint which can be seen from https://localhost:3000/docs
 
-### Flow to get access token with client authorization
+### Flow to get access token with confidential client
 
 1. Create user in https://localhost:3000/register
 2. Authenticate with new user in https://localhost:3000/authorize which will return access token
-3. Use access token as Bearer in authorization-header and post to /client to generate client. Check https://localhost:3000/docs and picture below for help
+3. Use access token as Bearer in authorization-header and post to /client to create client. **Set is_confidential=true for this example** Check https://localhost:3000/docs and picture below for help
 
 ![register client](documentation/register_client.png)
 
@@ -54,6 +54,9 @@ There is also REST-endpoint which can be seen from https://localhost:3000/docs
 6. Use returned code, *client_id*, *client_secret* from **point 3** and *redirect_uri* which was used for request in **point 4** to post to /token-endpoint. Check scheme **ConfidentialTokenRequest** from https://localhost:3000/docs
 7. Use returned endpoint to access secured endpoints. Check Secure-enpoints from https://localhost:3000/docs. Access depends on required scopes. Get can be used if *profile:read* is required, Post can be used if *profile:write*
 
+### Flow to get access token with public client
+
+Check further documentation for required parameters if public client is used. Steps 3, 4, 6 need different parameters to work with public clients. 
 ## Further documentation
 
 Read further documentation from [here](documentation/documentation.md). Documentation includes introduction to codebase, security considerations and instruction on how to use the system.

@@ -35,7 +35,7 @@ export const registerClient = async (req: Request, res: Response, next: NextFunc
           return;
         }
       }
-      res.status(400).json({ error: 'Invalid request: clientName, isConfidential, redirectUris required' });
+      res.status(400).json({ error: 'Invalid request: client_name, is_confidential, redirect_uris required' });
       return;
     }
     if (error.code === 11000) {

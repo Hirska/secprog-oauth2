@@ -22,7 +22,7 @@ Flow starts with application requesting authorization code flow. In this stage, 
 - _response_type_ **required**. Used to tell authorization server, which grant type is executed. **Only code is supported**
 - _client_id_ **required**. Id which is assigned to client on registration.
 - _code_challenge_ **required if client is not confidential**. Dynamically generated code in application. Should be cryptographically random string.
-- _code_challenge_method_ **optional**. Either value _plain_ or _s256_. This depends on if code challenge is SHA256 hash of the string or plain string. If *code_challenge_method* is omitted, server will assume it to be *plain*. **If s256 is used, code_challenge must be hashed with s256 and base64-encoded**
+- _code_challenge_method_ **optional**. Either value _plain_ or _s256_. This depends on if code challenge is SHA256 hash of the string or plain string. If *code_challenge_method* is omitted, server will assume it to be *plain*. **If s256 is used, code_challenge must be hashed with s256 and base64-encoded. plain -> sha256 -> base64**
 - _scope_ **optional**. Scope which application will get access to users data. Possible values *profile:read* *profile:write*. Defaults to *profile:read*. **Must be separated by empty space or + if using multiple. Example scope=profile:read profile:write**
 - _state_ **optional but recommended**. Random string which is used to prevent CSRF attacks. Authorization server returns state back unmodified.
 
@@ -40,7 +40,7 @@ Authorization code is used to obtain access token. Access token request uses JSO
 - _code_ **required**. Code obtained in authorization-request
 - _client_id_ **required**. Client which was used to obtain initial authorization code.
 - _redirect_uri_ **required**. Redirect uri which was used in initial authorization-request.
-- _code_verifier_ **required if code_challenge was used**. Original code before encryption.
+- _code_verifier_ **required if public client and code_challenge was used**. Original code before encryption.
 - _client_secret_ **required if confidential client**. Client secret which was added to client on creation.
 
 If parameters are correct. Access token is returned to user with specific lifetime. Access token can be used to fetch data from API.
@@ -151,14 +151,31 @@ Logging is handled with _winston_ package which is used to log necessary informa
 
 ### OAuth specific security solutions
 
+OAuth server could be used as open redirector which redirects users offsite. This vulnerability could cause phishing-attacks. This is prevented by validating redirect uris to be same as when registering client. If redirect uri is different, error message is shown and user is **not** redirected.
+
+Authorization code injection is vulnerability where
 ## Security testing
 
-Security testing is done mainly as manual testing.
+Security testing is done mainly as manual testing. Dependency security is tested with *npm audit*
 
+## Authenticate-middleware
+
+Tested with invalid JWT-token, token with invalid scope. Returned 401 in those cases.
 ## Test client registration
+
+Client registration uses authenticate-middleware which was already tested in previous phase. Possibility for XSS was tested as client name will be visible for users which try to authorize with that malicious client. It was possible to set client_name as with script-tags which was escaped by handlebars. However, client_name was modified to follow syntax a-zA-Z0-9 to prevent XSS.
 
 ### Test authorization code flow with confidential client
 
+Tested with invalid client_id, invalid redirect_uri, invalid scope which all resulted in error. To prevent open redirector error fo invalid redirect_uri must be shown in oauth2 server site which worked as supposed. If invalid password or email was given, error message *Invalid username or password* was shown.
 ### Test authorization code flow with public client
 
+Test with missing code challenge and invalid code challenge method. Both tests passed.
+
+### Test token-endpoint
+
+Tested with invalid redirect_uri, invalid client_secret, invalid client_id, invalid code. Tested multiple times with same authorization code which should be revoked after first succesful operation. For public clients, test with invalid and missing code_verifier. All manual tests passed.
+
 ## Improvements
+
+There is multiple grant types which could be implemented for OAuth server such as *Client credentials* and *Device grant*. Also better UI could be implemented for easier usability. Problem with JWT-tokens as access tokens is that those cannot be revoked before expiration because those are not in database. Different type of access token could be used for revokation.
