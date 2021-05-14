@@ -2,13 +2,13 @@
 
 ## Introduction
 
-This repository includes simple OAuth 2.0 server with authorization code flow. Application includes login page which asks permission from user to give third-party application access to specific scopes. Client must be registered to ask access, but currently dynamic client registration is not included.
+This repository includes simple OAuth 2.0 server with authorization code flow. Application includes login page which asks permission from user to give third-party application access to specific scopes. Client must be registered to ask access.
 
 In this repository, Authorization code flow for OAuth is implemented. Flow is implemented for confidential clients with client secret and public clients with PKCE ([Proof Key for Code Exchange](https://oauth.net/2/pkce/)). 
 
-Client registration is required to get authorization code from user. When client is registered, following properties are required.
+Client registration is required to get authorization code from user. When client is registered, following properties are required. Post-request to *https://localhost:3000/client*
 
-- *redirect_uris* **required**. These include all redirectUris that could be used when requesting authorization code for this client
+- *redirect_uris* **required**. These include all redirect uris that could be used when requesting authorization code for this client
 - *is_confidential* **required**. Is client confidential or not. Client secret as authentication method is used for confidential clients and PKCE for public clients.
 - *client_name* **required**. Name of the client, will be visible for user when requesting access.
 
@@ -16,7 +16,7 @@ Implemente flow is shown in diagram below.
 
 ![Authorization flow](Authorization_code.jpg)
 
-Flow starts with application requesting authorization code flow. In this stage, user agent (browser such as Chrome) is redirected to authorization servers log in screen. Query parameters must include _redirect_uri_, _response_type_ and _client_id_. If client is public, PKCE specific _code_challenge_ is required and* code_challenge_method*is optional. Optional parameters are*scope*, _state_.
+Flow starts with application requesting authorization code flow. In this stage, user agent (browser such as Chrome) is redirected to authorization servers log in screen. Following parameters should be added to request params.
 
 - _redirect_uri_ **required**. Uri where user agent is redirected after erronous or successful authorization.
 - _response_type_ **required**. Used to tell authorization server, which grant type is executed. **Only code is supported**
@@ -34,9 +34,9 @@ If user signs in with correct username and password, user agent is redirected ba
 
 Example. http://localhost:3000/callback?code=108788d45bb5c0e40374c30911bc169fb83548c1df9f7c2037ecc7413e9e0fdc
 
-Authorization code is used to obtain access token. Access token request uses JSON-body and it should include following parameters
+Authorization code is used to obtain access token. Access token request uses JSON-body and it should include following parameters. Post-request to *https://localhost:3000/token*
 
-- _grant_type_ **required**. Is used to tell authorization server, which grant type was used for authorization request.
+- _grant_type_ **required**. Is used to tell authorization server, which grant type was used for authorization request. **Use grant_type=authorization_code**
 - _code_ **required**. Code obtained in authorization-request
 - _client_id_ **required**. Client which was used to obtain initial authorization code.
 - _redirect_uri_ **required**. Redirect uri which was used in initial authorization-request.
