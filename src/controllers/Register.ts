@@ -21,7 +21,7 @@ export const register = async (req: Request, res: Response, next: NextFunction):
       return res.redirect(returnTo);
     }
 
-    return res.render('register', { message: `New user successfully created`, messageClass: 'alert-success' });
+    return res.redirect('/authorize');
   } catch (error) {
     if (error instanceof ZodError) {
       if (error.errors.length > 0) {

@@ -7,6 +7,9 @@ services:
       context: .
     ports:
       - '3000:3000'
+    environment:
+      MONGODB_URI: 'mongodb://username:password@mongodb:27017/oauth'
+      PORT: 3000
     depends_on:
       - 'mongodb'
   mongodb:
