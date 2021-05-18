@@ -16,6 +16,7 @@ Implemente flow is shown in diagram below.
 
 ![Authorization flow](Authorization_code.jpg)
 
+
 Flow starts with application requesting authorization code flow. In this stage, user agent (browser such as Chrome) is redirected to authorization servers log in screen. Following parameters should be added to request params.
 
 - _redirect_uri_ **required**. Uri where user agent is redirected after erronous or successful authorization.
@@ -92,6 +93,8 @@ Utils include functions which are used in multiple places. Important. There is f
 
 - _utils_ include general utility-function.
 
+- *logger* include logger used to log data to specified location
+
 ### views
 
 Views include views for this application. There is following views:
@@ -133,7 +136,7 @@ Users are able use all endpoints which require authentication when logged in. Cl
 To configure express application securely, site https://expressjs.com/en/advanced/best-practice-security.html is used as guide. With help of this guide, following things are checked.
 
 - TLS is used
-- Helmet is used
+- Helmet is used to set secure HTTP header
 - Dependencies are audited
 - Input is validated
 
